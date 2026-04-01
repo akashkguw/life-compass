@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/life-compass/sw.js', { scope: '/life-compass/' })})}
