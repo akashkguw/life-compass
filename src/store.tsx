@@ -187,15 +187,8 @@ function reducer(state: AppState, action: Action): AppState {
         eveningReview: null,
         habitCompletions: {},
       };
-      // Mark a few milestones as done
-      const seededPillars = finalPillars.map(p => ({
-        ...p,
-        goals: p.goals.map((g, gi) => ({
-          ...g,
-          milestones: g.milestones.map((m, mi) => mi === 0 && gi === 0 ? { ...m, completed: true, completedDate: t } : m),
-        })),
-      }));
-      return { ...state, onboarded: true, pillars: seededPillars, dayLogs: { ...state.dayLogs, ...seededLogs } };
+      // All milestones start fresh — nothing pre-completed
+      return { ...state, onboarded: true, pillars: finalPillars, dayLogs: { ...state.dayLogs, ...seededLogs } };
     }
 
     case 'RESET_STATE':
