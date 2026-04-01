@@ -59,6 +59,7 @@ type Action =
   | { type: 'UPDATE_PILLARS'; payload: Pillar[] }
   | { type: 'SET_USER_NAME'; payload: string }
   | { type: 'COMPLETE_ONBOARDING'; payload?: Pillar[] }
+  | { type: 'REMOVE_HABIT'; payload: { habitId: string } }
   | { type: 'RESET_STATE' };
 
 function reducer(state: AppState, action: Action): AppState {
@@ -156,6 +157,17 @@ function reducer(state: AppState, action: Action): AppState {
     case 'UPDATE_PILLARS':
       return { ...state, pillars: action.payload };
 
+    case 'REMOVE_HABIT': {
+      const { habitId } = action.payload;
+      return {
+        ...state,
+        pillars: state.pillars.map(p => ({
+          ...p,
+          habits: p.habits.filter(h => h.id !== habitId),
+        })),
+      };
+    }
+
     case 'SET_USER_NAME':
       return { ...state, userName: action.payload };
 
@@ -199,6 +211,16 @@ function reducer(state: AppState, action: Action): AppState {
   }
 }
 
+interface HabitHistory {
+  completedDays: number;
+  totalDays: number;
+  pct: number;
+  last7: number;
+  last30: number;
+  longestStreak: number;
+  daysSinceLastDone: number | null; // null if never done
+}
+
 interface StoreContextType {
   state: AppState;
   dispatch: React.Dispatch<Action>;
@@ -206,6 +228,7 @@ interface StoreContextType {
   todayLog: DayLog;
   getAllHabits: () => { habit: { id: string; title: string; frequency: string; icon?: string; pillarId: PillarId }; pillarName: string; pillarColor: string }[];
   getHabitStreak: (habitId: string) => number;
+  getHabitHistory: (habitId: string) => HabitHistory;
   getDayCompletionRate: (date: string) => number;
 }
 
@@ -262,6 +285,45 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [state.pillars]
   );
 
+  const getHabitHistory = useCallback((habitId: string): HabitHistory => {
+    let completedDays = 0;
+    let totalDays = 0;
+    let last7 = 0;
+    let last30 = 0;
+    let longestStreak = 0;
+    let currentRun = 0;
+    let daysSinceLastDone: number | null = null;
+
+    for (let i = 0; i < MAX_STREAK_LOOKBACK; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = format(d, 'yyyy-MM-dd');
+      const log = state.dayLogs[dateStr];
+      if (!log) continue;
+      totalDays++;
+      if (log.habitCompletions[habitId]) {
+        completedDays++;
+        currentRun++;
+        if (currentRun > longestStreak) longestStreak = currentRun;
+        if (i < 7) last7++;
+        if (i < 30) last30++;
+        if (daysSinceLastDone === null) daysSinceLastDone = i;
+      } else {
+        currentRun = 0;
+      }
+    }
+
+    return {
+      completedDays,
+      totalDays: Math.max(totalDays, 1),
+      pct: totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0,
+      last7,
+      last30,
+      longestStreak,
+      daysSinceLastDone,
+    };
+  }, [state.dayLogs]);
+
   const getDayCompletionRate = useCallback((date: string) => {
     const log = state.dayLogs[date];
     if (!log || dailyHabits.length === 0) return 0;
@@ -270,7 +332,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [state.dayLogs, dailyHabits]);
 
   return (
-    <StoreContext.Provider value={{ state, dispatch, today, todayLog, getAllHabits, getHabitStreak, getDayCompletionRate }}>
+    <StoreContext.Provider value={{ state, dispatch, today, todayLog, getAllHabits, getHabitStreak, getHabitHistory, getDayCompletionRate }}>
       {children}
     </StoreContext.Provider>
   );

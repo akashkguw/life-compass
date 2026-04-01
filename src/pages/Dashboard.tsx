@@ -1,10 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
   Rocket, GraduationCap, Heart, Home, Activity,
   Check, Sun, Moon, Flame, Target, Zap, Users,
   DollarSign, TrendingUp, Sparkles, Compass,
+  Trash2, X, BarChart3,
 } from 'lucide-react';
 import { useStore } from '../store';
 import { PillarId } from '../types';
@@ -34,7 +35,6 @@ function getMotivation(pct: number): string {
   return 'Perfect day';
 }
 
-/* Tiny inline SVG ring */
 function MiniRing({ size, stroke, pct, color }: { size: number; stroke: number; pct: number; color: string }) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
@@ -49,9 +49,43 @@ function MiniRing({ size, stroke, pct, color }: { size: number; stroke: number; 
   );
 }
 
+/* ── Habit health status ── */
+type HabitHealth = 'good' | 'warning' | 'danger';
+
+function getHabitHealth(daysSinceLastDone: number | null, streak: number): HabitHealth {
+  // Never done or 5+ days since last done → danger
+  if (daysSinceLastDone === null || daysSinceLastDone >= 5) return 'danger';
+  // 3-4 days → warning
+  if (daysSinceLastDone >= 3) return 'warning';
+  // Done recently
+  return 'good';
+}
+
+function getHealthLabel(health: HabitHealth, daysSinceLastDone: number | null): string {
+  if (health === 'danger') {
+    if (daysSinceLastDone === null) return 'Never completed';
+    return `${daysSinceLastDone}d inactive — needs attention`;
+  }
+  if (health === 'warning') return `${daysSinceLastDone}d ago — slipping`;
+  return 'On track';
+}
+
+interface LongPressInfo {
+  habitId: string;
+  habitTitle: string;
+  pillarName: string;
+  pillarColor: string;
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { state, dispatch, todayLog, getAllHabits, getDayCompletionRate, getHabitStreak, today } = useStore();
+  const { state, dispatch, todayLog, getAllHabits, getDayCompletionRate, getHabitStreak, getHabitHistory, today } = useStore();
+
+  // Long-press state
+  const [longPressInfo, setLongPressInfo] = useState<LongPressInfo | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pressStartRef = useRef(false);
 
   const dayCompletion = useMemo(() => getDayCompletionRate(today), [today, getDayCompletionRate]);
   const allHabits = useMemo(() => getAllHabits(), [getAllHabits]);
@@ -76,18 +110,53 @@ export default function Dashboard() {
   const habitPct = allHabits.length > 0 ? Math.round((habitsDone / allHabits.length) * 100) : 0;
 
   const handleHabitToggle = (habitId: string) => {
+    if (longPressInfo) return; // Don't toggle if long-press sheet is open
     dispatch({ type: 'TOGGLE_HABIT', payload: { date: today, habitId } });
   };
+
+  // ── Long-press handlers ──
+  const startPress = useCallback((info: LongPressInfo) => {
+    pressStartRef.current = true;
+    pressTimerRef.current = setTimeout(() => {
+      if (pressStartRef.current) {
+        setLongPressInfo(info);
+        setConfirmDelete(false);
+        // Vibrate for tactile feedback if available
+        if (navigator.vibrate) navigator.vibrate(30);
+      }
+    }, 500);
+  }, []);
+
+  const cancelPress = useCallback(() => {
+    pressStartRef.current = false;
+    if (pressTimerRef.current) {
+      clearTimeout(pressTimerRef.current);
+      pressTimerRef.current = null;
+    }
+  }, []);
+
+  const handleDelete = () => {
+    if (!longPressInfo) return;
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    dispatch({ type: 'REMOVE_HABIT', payload: { habitId: longPressInfo.habitId } });
+    setLongPressInfo(null);
+    setConfirmDelete(false);
+  };
+
+  // Get history for long-press sheet
+  const sheetHistory = longPressInfo ? getHabitHistory(longPressInfo.habitId) : null;
+  const sheetStreak = longPressInfo ? getHabitStreak(longPressInfo.habitId) : 0;
 
   return (
     <div className="dashboard">
 
-      {/* ── HERO — compact: greeting row + stats strip ── */}
+      {/* ── HERO ── */}
       <section className="hero">
         <div className="hero-bg-orb hero-orb-1" />
         <div className="hero-bg-orb hero-orb-2" />
-
-        {/* Row 1: greeting + progress ring */}
         <div className="hero-row">
           <div className="hero-text">
             <p className="hero-date">{format(new Date(), 'EEE, MMM d')}</p>
@@ -99,8 +168,6 @@ export default function Dashboard() {
             <span className="hero-ring-pct">{Math.round(dayCompletion)}%</span>
           </div>
         </div>
-
-        {/* Row 2: 4 stat chips + 2 ritual dots */}
         <div className="hero-strip">
           <div className="hs-chip">
             <Check size={11} strokeWidth={3} className="hs-icon hs-green" />
@@ -129,7 +196,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* ── HABITS — header + compact grid ── */}
+      {/* ── HABITS ── */}
       <section className="habits-section">
         <div className="habits-header">
           <span className="habits-title">Today's Habits</span>
@@ -139,27 +206,35 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="habit-grid">
-          {allHabits.map(({ habit, pillarColor }, i) => {
+          {allHabits.map(({ habit, pillarName, pillarColor }, i) => {
             const done = todayLog.habitCompletions?.[habit.id] || false;
             const streak = getHabitStreak(habit.id);
+            const history = getHabitHistory(habit.id);
+            const health: HabitHealth = done ? 'good' : getHabitHealth(history.daysSinceLastDone, streak);
+
             return (
               <div key={habit.id}
-                className={`habit-tile ${done ? 'habit-tile-done' : ''}`}
+                className={[
+                  'habit-tile',
+                  done && 'ht-done',
+                  !done && health === 'danger' && 'ht-danger',
+                  !done && health === 'warning' && 'ht-warning',
+                ].filter(Boolean).join(' ')}
                 onClick={() => handleHabitToggle(habit.id)}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleHabitToggle(habit.id); }}
+                onTouchStart={() => startPress({ habitId: habit.id, habitTitle: habit.title, pillarName, pillarColor })}
+                onTouchEnd={cancelPress}
+                onTouchCancel={cancelPress}
+                onMouseDown={() => startPress({ habitId: habit.id, habitTitle: habit.title, pillarName, pillarColor })}
+                onMouseUp={cancelPress}
+                onMouseLeave={cancelPress}
+                onContextMenu={(e) => e.preventDefault()}
                 role="checkbox" aria-checked={done} aria-label={habit.title} tabIndex={0}
-                style={{ animationDelay: `${i * 25}ms`, ...(done ? { borderColor: `${pillarColor}30` } : {}) }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleHabitToggle(habit.id); }}
+                style={{ animationDelay: `${i * 25}ms` }}
               >
                 <div className="habit-tile-accent" style={{ background: pillarColor }} />
                 <div className="habit-tile-body">
-                  <div className="habit-tile-top">
-                    <span className="habit-tile-emoji">{habit.icon || '✦'}</span>
-                    <div className={`habit-tile-ck ${done ? 'habit-tile-ck-on' : ''}`}
-                      style={done ? { borderColor: pillarColor, background: pillarColor } : {}}
-                    >
-                      {done && <Check size={8} color="white" strokeWidth={3} />}
-                    </div>
-                  </div>
+                  <span className="habit-tile-emoji">{habit.icon || '✦'}</span>
                   <span className={`habit-tile-name ${done ? 'habit-tile-name-done' : ''}`}>{habit.title}</span>
                   {streak > 0 && <span className="habit-tile-streak"><Flame size={8} /> {streak}d</span>}
                 </div>
@@ -170,7 +245,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* ── PILLARS — compact row ── */}
+      {/* ── PILLARS ── */}
       <section>
         <div className="habits-header" style={{ marginBottom: 8 }}>
           <span className="habits-title">Life Pillars</span>
@@ -197,6 +272,71 @@ export default function Dashboard() {
           })}
         </div>
       </section>
+
+      {/* ── LONG-PRESS BOTTOM SHEET ── */}
+      {longPressInfo && sheetHistory && (
+        <div className="ht-sheet-overlay" onClick={() => { setLongPressInfo(null); setConfirmDelete(false); }}>
+          <div className="ht-sheet" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="ht-sheet-head">
+              <div className="ht-sheet-title-row">
+                <span className="ht-sheet-emoji">{allHabits.find(h => h.habit.id === longPressInfo.habitId)?.habit.icon || '✦'}</span>
+                <div className="ht-sheet-titles">
+                  <span className="ht-sheet-name">{longPressInfo.habitTitle}</span>
+                  <span className="ht-sheet-pillar" style={{ color: longPressInfo.pillarColor }}>{longPressInfo.pillarName}</span>
+                </div>
+              </div>
+              <button className="ht-sheet-close" onClick={() => { setLongPressInfo(null); setConfirmDelete(false); }}
+                aria-label="Close">
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Stats row */}
+            <div className="ht-sheet-stats">
+              <div className="ht-stat">
+                <Flame size={14} className="ht-stat-icon" style={{ color: '#f59e0b' }} />
+                <span className="ht-stat-val">{sheetStreak}d</span>
+                <span className="ht-stat-label">streak</span>
+              </div>
+              <div className="ht-stat">
+                <BarChart3 size={14} className="ht-stat-icon" style={{ color: '#6366f1' }} />
+                <span className="ht-stat-val">{sheetHistory.pct}%</span>
+                <span className="ht-stat-label">all-time</span>
+              </div>
+              <div className="ht-stat">
+                <Check size={14} className="ht-stat-icon" style={{ color: '#10b981' }} />
+                <span className="ht-stat-val">{sheetHistory.last7}/7</span>
+                <span className="ht-stat-label">this week</span>
+              </div>
+              <div className="ht-stat">
+                <Target size={14} className="ht-stat-icon" style={{ color: '#8b5cf6' }} />
+                <span className="ht-stat-val">{sheetHistory.longestStreak}d</span>
+                <span className="ht-stat-label">best streak</span>
+              </div>
+            </div>
+
+            {/* Health status line */}
+            {(() => {
+              const health = getHabitHealth(sheetHistory.daysSinceLastDone, sheetStreak);
+              const label = getHealthLabel(health, sheetHistory.daysSinceLastDone);
+              return (
+                <div className={`ht-sheet-health ht-health-${health}`}>
+                  <span className="ht-health-dot" />
+                  {label}
+                </div>
+              );
+            })()}
+
+            {/* Delete */}
+            <button className={`ht-sheet-delete ${confirmDelete ? 'ht-sheet-delete-confirm' : ''}`}
+              onClick={handleDelete}>
+              <Trash2 size={14} />
+              {confirmDelete ? 'Confirm delete' : 'Remove habit'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
