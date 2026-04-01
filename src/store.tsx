@@ -58,7 +58,7 @@ type Action =
   | { type: 'SAVE_WEEKLY_PLAN'; payload: WeeklyPlan }
   | { type: 'UPDATE_PILLARS'; payload: Pillar[] }
   | { type: 'SET_USER_NAME'; payload: string }
-  | { type: 'COMPLETE_ONBOARDING' }
+  | { type: 'COMPLETE_ONBOARDING'; payload?: Pillar[] }
   | { type: 'RESET_STATE' };
 
 function reducer(state: AppState, action: Action): AppState {
@@ -160,10 +160,14 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, userName: action.payload };
 
     case 'COMPLETE_ONBOARDING': {
+      // Use custom pillars from onboarding if provided, otherwise keep current
+      const finalPillars = action.payload && action.payload.length > 0
+        ? action.payload
+        : state.pillars;
       // Seed mock data so the dashboard looks alive
       const t = getToday();
       const d = new Date();
-      const dailyHabits = state.pillars.flatMap(p => p.habits.filter(h => h.frequency === 'daily'));
+      const dailyHabits = finalPillars.flatMap(p => p.habits.filter(h => h.frequency === 'daily'));
       // Today starts fresh — no habits pre-checked
       // Build 5 days of history for streaks
       const seededLogs: Record<string, DayLog> = {};
@@ -184,7 +188,7 @@ function reducer(state: AppState, action: Action): AppState {
         habitCompletions: {},
       };
       // Mark a few milestones as done
-      const seededPillars = state.pillars.map(p => ({
+      const seededPillars = finalPillars.map(p => ({
         ...p,
         goals: p.goals.map((g, gi) => ({
           ...g,

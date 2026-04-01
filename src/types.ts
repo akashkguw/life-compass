@@ -1,4 +1,4 @@
-export type PillarId = 'career' | 'education' | 'family' | 'home' | 'health';
+export type PillarId = string;
 
 export interface Milestone {
   id: string;

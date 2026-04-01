@@ -7,14 +7,7 @@ import { PillarId } from '../types';
 export default function WeeklyView() {
   const { state, dispatch, today, getDayCompletionRate } = useStore();
   const [showPlanModal, setShowPlanModal] = useState(false);
-  const [formData, setFormData] = useState({
-    topPriority: '',
-    career: '',
-    education: '',
-    family: '',
-    home: '',
-    health: '',
-  });
+  const [formData, setFormData] = useState<Record<string, string>>({ topPriority: '' });
 
   // Calculate week boundaries
   const weekStart = startOfWeek(new Date(today), { weekStartsOn: 1 });
@@ -25,20 +18,19 @@ export default function WeeklyView() {
   // Get existing weekly plan if it exists
   const existingPlan = state.weeklyPlans[weekStartStr];
 
-  // Initialize form data from existing plan
+  // Initialize form data from existing plan — dynamic per pillar
   React.useEffect(() => {
     if (existingPlan) {
       const pillarGoals = existingPlan.pillarGoals || {};
-      setFormData({
-        topPriority: existingPlan.topPriority || '',
-        career: (pillarGoals.career?.[0] || ''),
-        education: (pillarGoals.education?.[0] || ''),
-        family: (pillarGoals.family?.[0] || ''),
-        home: (pillarGoals.home?.[0] || ''),
-        health: (pillarGoals.health?.[0] || ''),
-      });
+      const data: Record<string, string> = { topPriority: existingPlan.topPriority || '' };
+      state.pillars.forEach(p => { data[p.id] = pillarGoals[p.id]?.[0] || ''; });
+      setFormData(data);
+    } else {
+      const data: Record<string, string> = { topPriority: '' };
+      state.pillars.forEach(p => { data[p.id] = ''; });
+      setFormData(data);
     }
-  }, [existingPlan]);
+  }, [existingPlan, state.pillars]);
 
   // Calculate week stats
   const weekStats = useMemo(() => {
@@ -61,7 +53,6 @@ export default function WeeklyView() {
         bestDay = { name: format(day, 'EEE'), rate };
       }
 
-      // Count habits completed today
       if (dayLog?.habitCompletions) {
         totalHabitsDone += Object.values(dayLog.habitCompletions).filter(Boolean).length;
       }
@@ -78,20 +69,17 @@ export default function WeeklyView() {
   }, [daysOfWeek, getDayCompletionRate, state.dayLogs]);
 
   const handlePlanSubmit = () => {
-    const pillarGoals: Record<PillarId, string[]> = {
-      career: formData.career ? [formData.career] : [],
-      education: formData.education ? [formData.education] : [],
-      family: formData.family ? [formData.family] : [],
-      home: formData.home ? [formData.home] : [],
-      health: formData.health ? [formData.health] : [],
-    };
+    const pillarGoals: Record<PillarId, string[]> = {};
+    state.pillars.forEach(p => {
+      pillarGoals[p.id] = formData[p.id]?.trim() ? [formData[p.id]] : [];
+    });
 
     dispatch({
       type: 'SAVE_WEEKLY_PLAN',
       payload: {
         weekStart: weekStartStr,
         pillarGoals,
-        topPriority: formData.topPriority,
+        topPriority: formData.topPriority || '',
       },
     });
 
@@ -99,10 +87,7 @@ export default function WeeklyView() {
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -199,38 +184,39 @@ export default function WeeklyView() {
 
       {/* Weekly Plan Modal */}
       {showPlanModal && (
-        <div className="modal-overlay">
-          <div className="modal-panel">
+        <div className="modal-overlay" onClick={() => setShowPlanModal(false)} role="presentation">
+          <div className="modal-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Weekly Plan">
             <div className="modal-handle"></div>
             <h2 className="modal-title">Plan Your Week</h2>
 
             <div className="form-group">
-              <label>Top Priority This Week</label>
+              <label className="form-label">Top Priority This Week</label>
               <input
                 type="text"
-                value={formData.topPriority}
+                value={formData.topPriority || ''}
                 onChange={(e) => handleInputChange('topPriority', e.target.value)}
                 placeholder="What matters most this week?"
+                className="form-input"
+                maxLength={200}
               />
             </div>
 
             {state.pillars.map((pillar) => (
               <div key={pillar.id} className="form-group">
-                <label>{pillar.name}</label>
+                <label className="form-label" style={{ color: pillar.color }}>{pillar.name}</label>
                 <input
                   type="text"
-                  value={formData[pillar.id as keyof typeof formData]}
+                  value={formData[pillar.id] || ''}
                   onChange={(e) => handleInputChange(pillar.id, e.target.value)}
                   placeholder={`Goal for ${pillar.name}`}
+                  className="form-input"
+                  maxLength={200}
                 />
               </div>
             ))}
 
             <div className="form-actions">
-              <button
-                className="btn btn-secondary"
-                onClick={() => setShowPlanModal(false)}
-              >
+              <button className="btn btn-secondary" onClick={() => setShowPlanModal(false)}>
                 Cancel
               </button>
               <button className="btn btn-primary" onClick={handlePlanSubmit}>

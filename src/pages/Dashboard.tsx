@@ -3,13 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
   Rocket, GraduationCap, Heart, Home, Activity,
-  Check, Sun, Moon, Flame, Target,
+  Check, Sun, Moon, Flame, Target, Zap, Users,
+  DollarSign, TrendingUp, Sparkles, Compass,
 } from 'lucide-react';
 import { useStore } from '../store';
 import { PillarId } from '../types';
 
 const pillarIcons: Record<string, React.FC<any>> = {
   career: Rocket, education: GraduationCap, family: Heart, home: Home, health: Activity,
+  skills: Zap, networking: Users, finance: DollarSign, wellness: Activity,
+  academics: GraduationCap, 'career-prep': Target, social: Users,
+  'personal-growth': TrendingUp, creativity: Sparkles, spirituality: Compass,
+  'side-project': Rocket,
 };
 
 function getGreeting(): string {
