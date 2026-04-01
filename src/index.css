@@ -220,7 +220,7 @@ a{color:inherit;text-decoration:none}
   width:100%;max-width:440px;
   background:var(--bg-primary);
   border-radius:20px 20px 0 0;
-  padding:20px 20px 28px;
+  padding:20px 20px calc(28px + 72px + env(safe-area-inset-bottom, 0px));
   display:flex;flex-direction:column;gap:16px;
   animation:htSheetIn .3s cubic-bezier(.32,1,.5,1) both;
   box-shadow:0 -4px 30px rgba(0,0,0,.12)
@@ -373,22 +373,32 @@ a{color:inherit;text-decoration:none}
   letter-spacing:.06em;text-transform:uppercase
 }
 
-/* ── Content area ── */
-.ob2-content{
+/* ── Scrollable body ── */
+.ob2-body{
   position:relative;z-index:10;
   display:flex;flex-direction:column;align-items:center;
   width:100%;max-width:440px;
-  flex:1;
-  padding:24px 24px 32px;
+  flex:1;min-height:0;
+  padding:24px 24px 8px;
   box-sizing:border-box;
   gap:20px;
   text-align:center;
   overflow-y:auto;
   -webkit-overflow-scrolling:touch
 }
-.ob2-content-scroll{
-  justify-content:flex-start;
-  text-align:center
+
+/* ── Sticky footer ── */
+.ob2-footer{
+  position:relative;z-index:20;
+  width:100%;max-width:440px;
+  padding:12px 24px calc(16px + env(safe-area-inset-bottom, 0px));
+  box-sizing:border-box;
+  display:flex;flex-direction:column;align-items:center;
+  background:linear-gradient(0deg, var(--bg-primary) 60%, transparent);
+  flex-shrink:0
+}
+.ob2-footer-col{
+  gap:10px
 }
 .ob2-enter{animation:ob2Enter .4s cubic-bezier(.4,0,.2,1) both}
 .ob2-exit{animation:ob2Exit .28s cubic-bezier(.4,0,.2,1) both}
@@ -457,11 +467,15 @@ a{color:inherit;text-decoration:none}
   background:linear-gradient(135deg,var(--accent),var(--accent-light));
   color:white;font-size:.95rem;font-weight:700;border:none;cursor:pointer;
   box-shadow:0 4px 20px rgba(99,102,241,.3),0 1px 3px rgba(0,0,0,.08);
-  transition:transform .2s ease,box-shadow .2s ease,opacity .2s ease;
-  margin-top:auto;flex-shrink:0
+  transition:transform .2s ease,box-shadow .2s ease,opacity .2s ease,background .2s ease;
+  flex-shrink:0
 }
 .ob2-primary-btn:active{transform:scale(.97);box-shadow:0 2px 12px rgba(99,102,241,.2)}
-.ob2-primary-btn:disabled{opacity:.3;cursor:not-allowed;transform:none}
+.ob2-primary-btn:disabled{
+  opacity:.55;cursor:not-allowed;transform:none;
+  background:var(--bg-tertiary);color:var(--text-tertiary);
+  box-shadow:none
+}
 .ob2-finish-btn{
   background:linear-gradient(135deg,#f59e0b,#ef4444,#8b5cf6);
   box-shadow:0 4px 24px rgba(245,158,11,.3),0 1px 3px rgba(0,0,0,.08)
@@ -572,7 +586,7 @@ a{color:inherit;text-decoration:none}
 
 .ob2-carousel-actions{
   display:flex;flex-direction:column;align-items:center;gap:10px;
-  width:100%;margin-top:auto
+  width:100%
 }
 .ob2-skip-btn{
   padding:8px 16px;border:none;background:none;

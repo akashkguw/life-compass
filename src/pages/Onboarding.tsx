@@ -12,7 +12,6 @@ import {
 
 type Step = 'name' | 'template' | 'career' | 'education' | 'family' | 'health' | 'custom-pick' | 'carousel';
 
-/* Emoji sets for each step for premium visual headers */
 const STEP_HEROES: Record<string, { emoji: string; gradient: string }> = {
   name:         { emoji: '🧭', gradient: 'linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%)' },
   template:     { emoji: '✨', gradient: 'linear-gradient(135deg, #f59e0b 0%, #f97316 50%, #ef4444 100%)' },
@@ -56,7 +55,6 @@ export default function Onboarding() {
   const [direction, setDirection] = useState<'in' | 'out'>('in');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Config state
   const [templateId, setTemplateId] = useState('');
   const [role, setRole] = useState('');
   const [roleTarget, setRoleTarget] = useState('');
@@ -66,14 +64,13 @@ export default function Onboarding() {
   const [customPillars, setCustomPillars] = useState<string[]>([]);
   const [slide, setSlide] = useState(0);
 
-  // Focus input on name step
   useEffect(() => {
     if (step === 'name' && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 400);
     }
   }, [step]);
 
-  // ── Navigation helpers ──
+  // ── Navigation ──
 
   const selectedTemplate = LIFE_TEMPLATES.find(t => t.id === templateId);
 
@@ -129,8 +126,6 @@ export default function Onboarding() {
     if (idx < flow.length - 1) goNext(flow[idx + 1]);
   };
 
-  // ── Finish ──
-
   const handleFinish = () => {
     const config: OnboardingConfig = {
       templateId,
@@ -145,11 +140,10 @@ export default function Onboarding() {
     dispatch({ type: 'COMPLETE_ONBOARDING', payload: generated as unknown as Pillar[] });
   };
 
-  // ── Progress bar ──
   const progress = Math.max(0, ((currentIndex()) / (totalSteps() - 1)) * 100);
   const hero = STEP_HEROES[step] || STEP_HEROES.name;
 
-  // ── Render helpers ──
+  // ── Shared layout pieces ──
 
   const renderProgress = () => (
     <div className="ob2-progress-wrap">
@@ -160,12 +154,16 @@ export default function Onboarding() {
     </div>
   );
 
-  const renderBackBtn = () => (
-    currentIndex() > 0 ? (
-      <button className="ob2-back-btn" onClick={goBack} aria-label="Go back">
-        <ChevronLeft size={20} />
-      </button>
-    ) : <div style={{ width: 40 }} />
+  const renderTopbar = () => (
+    <div className="ob2-topbar">
+      {currentIndex() > 0 ? (
+        <button className="ob2-back-btn" onClick={goBack} aria-label="Go back">
+          <ChevronLeft size={20} />
+        </button>
+      ) : <div style={{ width: 40 }} />}
+      {renderProgress()}
+      <div style={{ width: 40 }} />
+    </div>
   );
 
   // ── STEP: Name ──
@@ -173,11 +171,10 @@ export default function Onboarding() {
     return (
       <div className="ob2-page">
         <div className="ob2-glow" style={{ background: hero.gradient }} />
-        <div className={`ob2-content ${direction === 'out' ? 'ob2-exit' : 'ob2-enter'}`}>
+        <div className={`ob2-body ${direction === 'out' ? 'ob2-exit' : 'ob2-enter'}`}>
           <div className="ob2-hero-emoji">{hero.emoji}</div>
           <h1 className="ob2-title-xl">Life Compass</h1>
           <p className="ob2-subtitle">Your personal growth dashboard</p>
-
           <div className="ob2-name-wrap">
             <label className="ob2-label">What should we call you?</label>
             <input ref={inputRef} className="ob2-input" type="text"
@@ -190,15 +187,14 @@ export default function Onboarding() {
                 }
               }}
               maxLength={20} />
-            <button className="ob2-primary-btn"
-              onClick={() => {
-                dispatch({ type: 'SET_USER_NAME', payload: name.trim() });
-                goForward();
-              }}
-              disabled={!name.trim()}>
-              Get Started <ArrowRight size={18} />
-            </button>
           </div>
+        </div>
+        <div className="ob2-footer">
+          <button className="ob2-primary-btn"
+            onClick={() => { dispatch({ type: 'SET_USER_NAME', payload: name.trim() }); goForward(); }}
+            disabled={!name.trim()}>
+            Get Started <ArrowRight size={18} />
+          </button>
         </div>
       </div>
     );
@@ -209,16 +205,11 @@ export default function Onboarding() {
     return (
       <div className="ob2-page">
         <div className="ob2-glow" style={{ background: hero.gradient }} />
-        <div className="ob2-topbar">
-          {renderBackBtn()}
-          {renderProgress()}
-          <div style={{ width: 40 }} />
-        </div>
-        <div className={`ob2-content ${direction === 'out' ? 'ob2-exit' : 'ob2-enter'}`}>
+        {renderTopbar()}
+        <div className={`ob2-body ${direction === 'out' ? 'ob2-exit' : 'ob2-enter'}`}>
           <div className="ob2-hero-emoji">{hero.emoji}</div>
           <h1 className="ob2-title">What describes your life right now?</h1>
           <p className="ob2-subtitle">We'll tailor everything to match</p>
-
           <div className="ob2-template-grid">
             {LIFE_TEMPLATES.map(t => (
               <button key={t.id}
@@ -227,13 +218,12 @@ export default function Onboarding() {
                 <span className="ob2-tc-emoji">{t.emoji}</span>
                 <span className="ob2-tc-name">{t.name}</span>
                 <span className="ob2-tc-desc">{t.description}</span>
-                {templateId === t.id && (
-                  <div className="ob2-tc-check"><Check size={14} /></div>
-                )}
+                {templateId === t.id && <div className="ob2-tc-check"><Check size={14} /></div>}
               </button>
             ))}
           </div>
-
+        </div>
+        <div className="ob2-footer">
           <button className="ob2-primary-btn" onClick={goForward} disabled={!templateId}>
             Continue <ChevronRight size={18} />
           </button>
@@ -252,16 +242,11 @@ export default function Onboarding() {
     return (
       <div className="ob2-page">
         <div className="ob2-glow" style={{ background: hero.gradient }} />
-        <div className="ob2-topbar">
-          {renderBackBtn()}
-          {renderProgress()}
-          <div style={{ width: 40 }} />
-        </div>
-        <div className={`ob2-content ${direction === 'out' ? 'ob2-exit' : 'ob2-enter'}`}>
+        {renderTopbar()}
+        <div className={`ob2-body ${direction === 'out' ? 'ob2-exit' : 'ob2-enter'}`}>
           <div className="ob2-hero-emoji">{hero.emoji}</div>
           <h1 className="ob2-title">Choose Your Life Pillars</h1>
           <p className="ob2-subtitle">{customPillars.length}/6 selected — pick at least 3</p>
-
           <div className="ob2-chips-wrap">
             {PILLAR_DEFS.map(p => {
               const on = customPillars.includes(p.id);
@@ -277,9 +262,9 @@ export default function Onboarding() {
               );
             })}
           </div>
-
-          <button className="ob2-primary-btn" onClick={goForward}
-            disabled={customPillars.length < 3}>
+        </div>
+        <div className="ob2-footer">
+          <button className="ob2-primary-btn" onClick={goForward} disabled={customPillars.length < 3}>
             Continue <ChevronRight size={18} />
           </button>
         </div>
@@ -293,12 +278,8 @@ export default function Onboarding() {
     return (
       <div className="ob2-page">
         <div className="ob2-glow" style={{ background: hero.gradient }} />
-        <div className="ob2-topbar">
-          {renderBackBtn()}
-          {renderProgress()}
-          <div style={{ width: 40 }} />
-        </div>
-        <div className={`ob2-content ob2-content-scroll ${direction === 'out' ? 'ob2-exit' : 'ob2-enter'}`}>
+        {renderTopbar()}
+        <div className={`ob2-body ${direction === 'out' ? 'ob2-exit' : 'ob2-enter'}`}>
           <div className="ob2-hero-emoji">{hero.emoji}</div>
           <h1 className="ob2-title">What's your role?</h1>
           <p className="ob2-subtitle">This shapes your career goals and milestones</p>
@@ -330,7 +311,8 @@ export default function Onboarding() {
               </div>
             </>
           )}
-
+        </div>
+        <div className="ob2-footer">
           <button className="ob2-primary-btn" onClick={goForward} disabled={!role}>
             Continue <ChevronRight size={18} />
           </button>
@@ -344,16 +326,11 @@ export default function Onboarding() {
     return (
       <div className="ob2-page">
         <div className="ob2-glow" style={{ background: hero.gradient }} />
-        <div className="ob2-topbar">
-          {renderBackBtn()}
-          {renderProgress()}
-          <div style={{ width: 40 }} />
-        </div>
-        <div className={`ob2-content ${direction === 'out' ? 'ob2-exit' : 'ob2-enter'}`}>
+        {renderTopbar()}
+        <div className={`ob2-body ${direction === 'out' ? 'ob2-exit' : 'ob2-enter'}`}>
           <div className="ob2-hero-emoji">{hero.emoji}</div>
           <h1 className="ob2-title">What are you studying?</h1>
           <p className="ob2-subtitle">We'll create goals tailored to your program</p>
-
           <div className="ob2-options-list">
             {EDUCATION_OPTIONS.map(e => (
               <button key={e.id}
@@ -364,7 +341,8 @@ export default function Onboarding() {
               </button>
             ))}
           </div>
-
+        </div>
+        <div className="ob2-footer">
           <button className="ob2-primary-btn" onClick={goForward}>
             {education ? 'Continue' : 'Skip'} <ChevronRight size={18} />
           </button>
@@ -378,16 +356,11 @@ export default function Onboarding() {
     return (
       <div className="ob2-page">
         <div className="ob2-glow" style={{ background: hero.gradient }} />
-        <div className="ob2-topbar">
-          {renderBackBtn()}
-          {renderProgress()}
-          <div style={{ width: 40 }} />
-        </div>
-        <div className={`ob2-content ${direction === 'out' ? 'ob2-exit' : 'ob2-enter'}`}>
+        {renderTopbar()}
+        <div className={`ob2-body ${direction === 'out' ? 'ob2-exit' : 'ob2-enter'}`}>
           <div className="ob2-hero-emoji">{hero.emoji}</div>
           <h1 className="ob2-title">What's your family life like?</h1>
           <p className="ob2-subtitle">This personalizes your family pillar</p>
-
           <div className="ob2-options-list">
             {FAMILY_OPTIONS.map(f => (
               <button key={f.id}
@@ -398,7 +371,8 @@ export default function Onboarding() {
               </button>
             ))}
           </div>
-
+        </div>
+        <div className="ob2-footer">
           <button className="ob2-primary-btn" onClick={goForward}>
             {family ? 'Continue' : 'Skip'} <ChevronRight size={18} />
           </button>
@@ -415,16 +389,11 @@ export default function Onboarding() {
     return (
       <div className="ob2-page">
         <div className="ob2-glow" style={{ background: hero.gradient }} />
-        <div className="ob2-topbar">
-          {renderBackBtn()}
-          {renderProgress()}
-          <div style={{ width: 40 }} />
-        </div>
-        <div className={`ob2-content ${direction === 'out' ? 'ob2-exit' : 'ob2-enter'}`}>
+        {renderTopbar()}
+        <div className={`ob2-body ${direction === 'out' ? 'ob2-exit' : 'ob2-enter'}`}>
           <div className="ob2-hero-emoji">{hero.emoji}</div>
           <h1 className="ob2-title">Health & Wellness Focus</h1>
           <p className="ob2-subtitle">Pick all that apply to you</p>
-
           <div className="ob2-chips-wrap ob2-chips-lg">
             {HEALTH_FOCUS_OPTIONS.map(h => {
               const on = healthFocus.includes(h.id);
@@ -439,7 +408,8 @@ export default function Onboarding() {
               );
             })}
           </div>
-
+        </div>
+        <div className="ob2-footer">
           <button className="ob2-primary-btn" onClick={goForward}>
             {healthFocus.length > 0 ? 'Continue' : 'Skip'} <ChevronRight size={18} />
           </button>
@@ -448,28 +418,22 @@ export default function Onboarding() {
     );
   }
 
-  // ── STEP: Carousel (final) ──
+  // ── STEP: Carousel ──
   const s = carouselSlides[slide];
   const isLast = slide === carouselSlides.length - 1;
 
   return (
     <div className="ob2-page">
       <div className="ob2-glow" style={{ background: hero.gradient }} />
-      <div className="ob2-topbar">
-        {renderBackBtn()}
-        {renderProgress()}
-        <div style={{ width: 40 }} />
-      </div>
-      <div className={`ob2-content ${direction === 'out' ? 'ob2-exit' : 'ob2-enter'}`}>
+      {renderTopbar()}
+      <div className={`ob2-body ${direction === 'out' ? 'ob2-exit' : 'ob2-enter'}`}>
         <div className="ob2-hero-emoji ob2-hero-bounce" key={slide}>{s.emoji}</div>
         <h1 className="ob2-title">{s.title}</h1>
         <p className="ob2-subtitle">{s.desc}</p>
-
         <div className="ob2-example-card">
           <Sparkles size={14} className="ob2-example-icon" />
           <span>{s.example}</span>
         </div>
-
         <div className="ob2-carousel-dots">
           {carouselSlides.map((_, i) => (
             <button key={i}
@@ -477,23 +441,22 @@ export default function Onboarding() {
               onClick={() => setSlide(i)} />
           ))}
         </div>
-
-        <div className="ob2-carousel-actions">
-          {isLast ? (
-            <button className="ob2-primary-btn ob2-finish-btn" onClick={handleFinish}>
-              Launch My Compass <ArrowRight size={18} />
-            </button>
-          ) : (
-            <button className="ob2-primary-btn" onClick={() => setSlide(slide + 1)}>
-              Next <ChevronRight size={18} />
-            </button>
-          )}
-          {!isLast && (
-            <button className="ob2-skip-btn" onClick={handleFinish}>
-              Skip tour
-            </button>
-          )}
-        </div>
+      </div>
+      <div className="ob2-footer ob2-footer-col">
+        {isLast ? (
+          <button className="ob2-primary-btn ob2-finish-btn" onClick={handleFinish}>
+            Launch My Compass <ArrowRight size={18} />
+          </button>
+        ) : (
+          <button className="ob2-primary-btn" onClick={() => setSlide(slide + 1)}>
+            Next <ChevronRight size={18} />
+          </button>
+        )}
+        {!isLast && (
+          <button className="ob2-skip-btn" onClick={handleFinish}>
+            Skip tour
+          </button>
+        )}
       </div>
     </div>
   );
