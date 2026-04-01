@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Routes, Route, useLocation } from 'react-router-dom'
+import { Routes, Route, useLocation, Link } from 'react-router-dom'
 import { Compass, LayoutDashboard, CalendarDays, Calendar, Plus, Settings } from 'lucide-react'
 import { useStore } from './store'
 import Dashboard from './pages/Dashboard'
@@ -78,15 +78,16 @@ export default function App() {
         </Routes>
       </main>
 
-      <nav className="bottom-nav">
+      <nav className="bottom-nav" role="navigation" aria-label="Main navigation">
         {navItems.slice(0, 2).map((item) => {
           const Icon = item.icon
           return (
-            <a key={item.path} href={`#${item.path}`}
-              className={`nav-item ${isActive(item.path) ? 'active' : ''}`}>
+            <Link key={item.path} to={item.path}
+              className={`nav-item ${isActive(item.path) ? 'active' : ''}`}
+              aria-current={isActive(item.path) ? 'page' : undefined}>
               <div className="nav-icon-wrap"><Icon size={20} /></div>
               <span>{item.label}</span>
-            </a>
+            </Link>
           )
         })}
         <button className="nav-fab" onClick={() => setShowQuickLog(true)} aria-label="Quick Log">
@@ -95,11 +96,12 @@ export default function App() {
         {navItems.slice(2).map((item) => {
           const Icon = item.icon
           return (
-            <a key={item.path} href={`#${item.path}`}
-              className={`nav-item ${isActive(item.path) ? 'active' : ''}`}>
+            <Link key={item.path} to={item.path}
+              className={`nav-item ${isActive(item.path) ? 'active' : ''}`}
+              aria-current={isActive(item.path) ? 'page' : undefined}>
               <div className="nav-icon-wrap"><Icon size={20} /></div>
               <span>{item.label}</span>
-            </a>
+            </Link>
           )
         })}
       </nav>

@@ -110,10 +110,14 @@ export default function Dashboard() {
             <span className="hs-val">{milestones.done}/{milestones.total}</span>
           </div>
           <div className="hs-dot-group">
-            <div className={`hs-ritual ${morningDone ? 'hs-ritual-done' : ''}`} onClick={() => navigate('/daily')}>
+            <div className={`hs-ritual ${morningDone ? 'hs-ritual-done' : ''}`} onClick={() => navigate('/daily')}
+              role="button" tabIndex={0} aria-label={`Morning ritual ${morningDone ? 'completed' : 'pending'}`}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/daily'); }}>
               <Sun size={11} />
             </div>
-            <div className={`hs-ritual ${eveningDone ? 'hs-ritual-done' : ''}`} onClick={() => navigate('/daily')}>
+            <div className={`hs-ritual ${eveningDone ? 'hs-ritual-done' : ''}`} onClick={() => navigate('/daily')}
+              role="button" tabIndex={0} aria-label={`Evening ritual ${eveningDone ? 'completed' : 'pending'}`}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/daily'); }}>
               <Moon size={11} />
             </div>
           </div>
@@ -137,6 +141,8 @@ export default function Dashboard() {
               <div key={habit.id}
                 className={`habit-tile ${done ? 'habit-tile-done' : ''}`}
                 onClick={() => handleHabitToggle(habit.id)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleHabitToggle(habit.id); }}
+                role="checkbox" aria-checked={done} aria-label={habit.title} tabIndex={0}
                 style={{ animationDelay: `${i * 25}ms`, ...(done ? { borderColor: `${pillarColor}30` } : {}) }}
               >
                 <div className="habit-tile-accent" style={{ background: pillarColor }} />
@@ -170,7 +176,9 @@ export default function Dashboard() {
             const pct = ms.length > 0 ? Math.round(ms.filter(m => m.completed).length / ms.length * 100) : 0;
             const Icon = pillarIcons[pillar.id as PillarId] || Activity;
             return (
-              <div key={pillar.id} className="pillar-mini" onClick={() => navigate(`/pillar/${pillar.id}`)}>
+              <div key={pillar.id} className="pillar-mini" onClick={() => navigate(`/pillar/${pillar.id}`)}
+                role="button" tabIndex={0} aria-label={`${pillar.name} — ${pct}% complete`}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/pillar/${pillar.id}`); }}>
                 <div className="pillar-mini-icon" style={{ background: pillar.gradient }}>
                   <Icon size={15} color="white" />
                 </div>

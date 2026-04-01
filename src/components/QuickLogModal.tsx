@@ -20,7 +20,7 @@ export default function QuickLogModal({ isOpen, onClose }: QuickLogModalProps) {
     if (!selectedPillarId || !note.trim()) return;
 
     const newLog: QuickLog = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       pillarId: selectedPillarId as PillarId,
       note: note.trim(),
       timestamp: new Date().toISOString(),
@@ -42,8 +42,8 @@ export default function QuickLogModal({ isOpen, onClose }: QuickLogModalProps) {
   ];
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay" onClick={onClose} role="presentation">
+      <div className="modal-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Quick Log">
         <div className="modal-handle" />
         <h2 className="modal-title">Quick Log</h2>
         <p className="modal-subtitle">Capture a moment from your day</p>
@@ -89,6 +89,7 @@ export default function QuickLogModal({ isOpen, onClose }: QuickLogModalProps) {
             placeholder="What happened?"
             className="form-textarea"
             rows={3}
+            maxLength={500}
           />
         </div>
 

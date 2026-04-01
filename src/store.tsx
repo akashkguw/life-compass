@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useCallback, useRef, useMemo } from 'react';
 import { AppState, DayLog, MorningPlan, QuickLog, EveningReview, WeeklyPlan, PillarId, Pillar } from './types';
 import { defaultPillars } from './data/pillars';
 import { format } from 'date-fns';
@@ -219,8 +219,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const today = getToday();
   const todayLog = ensureDayLog(state, today);
 
+  // Debounced localStorage persistence (300ms)
+  const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if (saveTimeout.current) clearTimeout(saveTimeout.current);
+    saveTimeout.current = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.error('Failed to save state:', e);
+      }
+    }, 300);
+    return () => { if (saveTimeout.current) clearTimeout(saveTimeout.current); };
   }, [state]);
 
   const getAllHabits = useCallback(() => {
@@ -233,10 +243,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
   }, [state.pillars]);
 
+  const MAX_STREAK_LOOKBACK = 60;
   const getHabitStreak = useCallback((habitId: string) => {
     let streak = 0;
-    const d = new Date();
-    for (let i = 0; i < 365; i++) {
+    for (let i = 0; i < MAX_STREAK_LOOKBACK; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
       const dateStr = format(d, 'yyyy-MM-dd');
       const log = state.dayLogs[dateStr];
       if (log?.habitCompletions[habitId]) {
@@ -244,19 +256,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       } else if (i > 0) {
         break;
       }
-      d.setDate(d.getDate() - 1);
     }
     return streak;
   }, [state.dayLogs]);
 
+  const dailyHabits = useMemo(
+    () => state.pillars.flatMap(p => p.habits.filter(h => h.frequency === 'daily')),
+    [state.pillars]
+  );
+
   const getDayCompletionRate = useCallback((date: string) => {
     const log = state.dayLogs[date];
-    if (!log) return 0;
-    const dailyHabits = state.pillars.flatMap(p => p.habits.filter(h => h.frequency === 'daily'));
-    if (dailyHabits.length === 0) return 0;
+    if (!log || dailyHabits.length === 0) return 0;
     const completed = dailyHabits.filter(h => log.habitCompletions[h.id]).length;
     return Math.round((completed / dailyHabits.length) * 100);
-  }, [state.dayLogs, state.pillars]);
+  }, [state.dayLogs, dailyHabits]);
 
   return (
     <StoreContext.Provider value={{ state, dispatch, today, todayLog, getAllHabits, getHabitStreak, getDayCompletionRate }}>

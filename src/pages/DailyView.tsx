@@ -78,7 +78,7 @@ const DailyView: React.FC = () => {
 
   const formatLogTime = (timestamp: string): string => {
     try { return format(parseISO(timestamp), 'h:mm a'); }
-    catch { return ''; }
+    catch { return 'Invalid time'; }
   };
 
   const logTypeIcon: Record<string, React.ReactNode> = {
@@ -270,16 +270,20 @@ const DailyView: React.FC = () => {
 
       {/* ── Morning Modal ── */}
       {showMorningModal && (
-        <div className="modal-overlay" onClick={() => setShowMorningModal(false)}>
-          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={() => setShowMorningModal(false)} role="presentation">
+          <div className="modal-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Morning Plan">
             <div className="modal-handle" />
+            <button className="modal-close-btn" onClick={() => setShowMorningModal(false)} aria-label="Close">
+              <X size={18} />
+            </button>
             <div className="modal-title">Start Your Morning</div>
             <div className="modal-subtitle">Set your intentions for the day</div>
             <form className="modal-form">
               <div className="form-group">
                 <label className="form-label">Top 3 Priorities</label>
                 {morningForm.priorities.map((p, idx) => (
-                  <input key={idx} type="text" placeholder={`Priority ${idx + 1}`} value={p}
+                  <input key={`priority-${idx}`} type="text" placeholder={`Priority ${idx + 1}`} value={p}
+                    maxLength={200}
                     onChange={(e) => {
                       const u = [...morningForm.priorities]; u[idx] = e.target.value;
                       setMorningForm({ ...morningForm, priorities: u });
@@ -297,7 +301,8 @@ const DailyView: React.FC = () => {
                 <div className="rating-row">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <button key={i} type="button" className={`rating-star ${i < morningForm.energyLevel ? 'active' : ''}`}
-                      onClick={() => setMorningForm({ ...morningForm, energyLevel: i + 1 })}>★</button>
+                      onClick={() => setMorningForm({ ...morningForm, energyLevel: i + 1 })}
+                      aria-label={`Energy level ${i + 1} of 5`}>★</button>
                   ))}
                 </div>
               </div>
@@ -311,9 +316,12 @@ const DailyView: React.FC = () => {
 
       {/* ── Evening Modal ── */}
       {showEveningModal && (
-        <div className="modal-overlay" onClick={() => setShowEveningModal(false)}>
-          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={() => setShowEveningModal(false)} role="presentation">
+          <div className="modal-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Evening Review">
             <div className="modal-handle" />
+            <button className="modal-close-btn" onClick={() => setShowEveningModal(false)} aria-label="Close">
+              <X size={18} />
+            </button>
             <div className="modal-title">Wind Down & Reflect</div>
             <div className="modal-subtitle">Review your day and plan ahead</div>
             <form className="modal-form">
@@ -325,7 +333,7 @@ const DailyView: React.FC = () => {
                       onChange={(e) => { const u = [...eveningForm.wins]; u[idx] = e.target.value; setEveningForm({ ...eveningForm, wins: u }); }}
                       className="form-input" />
                     {eveningForm.wins.length > 1 && (
-                      <button type="button" className="btn-remove"
+                      <button type="button" className="btn-remove" aria-label={`Remove win ${idx + 1}`}
                         onClick={() => setEveningForm({ ...eveningForm, wins: eveningForm.wins.filter((_, i) => i !== idx) })}>
                         <X size={16} /></button>
                     )}
@@ -344,7 +352,7 @@ const DailyView: React.FC = () => {
                       onChange={(e) => { const u = [...eveningForm.challenges]; u[idx] = e.target.value; setEveningForm({ ...eveningForm, challenges: u }); }}
                       className="form-input" />
                     {eveningForm.challenges.length > 1 && (
-                      <button type="button" className="btn-remove"
+                      <button type="button" className="btn-remove" aria-label={`Remove challenge ${idx + 1}`}
                         onClick={() => setEveningForm({ ...eveningForm, challenges: eveningForm.challenges.filter((_, i) => i !== idx) })}>
                         <X size={16} /></button>
                     )}
@@ -372,7 +380,8 @@ const DailyView: React.FC = () => {
                 <div className="rating-row">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <button key={i} type="button" className={`rating-star ${i < eveningForm.overallRating ? 'active' : ''}`}
-                      onClick={() => setEveningForm({ ...eveningForm, overallRating: i + 1 })}>★</button>
+                      onClick={() => setEveningForm({ ...eveningForm, overallRating: i + 1 })}
+                      aria-label={`Rating ${i + 1} of 5`}>★</button>
                   ))}
                 </div>
               </div>
