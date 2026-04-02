@@ -26,6 +26,9 @@ export interface Habit {
   title: string;
   frequency: 'daily' | 'weekly';
   icon?: string;
+  priority: 'high' | 'medium' | 'low';
+  createdDate: string;
+  removedDate?: string;
 }
 
 // Re-export from types — but we use a local version for generation
@@ -377,6 +380,8 @@ function createHabit(
     title,
     frequency,
     icon,
+    priority: 'medium' as const,
+    createdDate: new Date().toISOString().slice(0, 10),
   };
 }
 

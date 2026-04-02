@@ -17,12 +17,17 @@ export interface Goal {
   status: 'active' | 'completed' | 'paused';
 }
 
+export type HabitPriority = 'high' | 'medium' | 'low';
+
 export interface Habit {
   id: string;
   pillarId: PillarId;
   title: string;
   frequency: 'daily' | 'weekly';
   icon?: string;
+  priority: HabitPriority;
+  createdDate: string;        // yyyy-MM-dd — when this habit was added
+  removedDate?: string;       // yyyy-MM-dd — soft-delete: still visible for past days
 }
 
 export interface Pillar {

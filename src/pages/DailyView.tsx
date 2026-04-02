@@ -1,13 +1,20 @@
 import React, { useState } from 'react';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, addDays, subDays } from 'date-fns';
 import {
   Sun, Moon as MoonIcon, Check, Plus, X,
   Flame, Trophy, TrendingUp, AlertCircle, Lightbulb, ChevronRight,
+  ChevronLeft, Lock,
 } from 'lucide-react';
 import { useStore } from '../store';
 
 const DailyView: React.FC = () => {
-  const { state, dispatch, today, todayLog, getAllHabits, getHabitStreak } = useStore();
+  const { state, dispatch, today, getAllHabits, getHabitStreak, getDayLog } = useStore();
+
+  const [viewDate, setViewDate] = useState(today);
+  const isToday = viewDate === today;
+  const isYesterday = viewDate === format(subDays(new Date(), 1), 'yyyy-MM-dd');
+  const canEdit = isToday || isYesterday;
+  const dayLog = getDayLog(viewDate);
 
   const [showMorningModal, setShowMorningModal] = useState(false);
   const [showEveningModal, setShowEveningModal] = useState(false);
@@ -26,11 +33,23 @@ const DailyView: React.FC = () => {
     overallRating: 0,
   });
 
+  const goToPrev = () => {
+    const prev = format(subDays(parseISO(viewDate), 1), 'yyyy-MM-dd');
+    setViewDate(prev);
+  };
+
+  const goToNext = () => {
+    if (viewDate >= today) return;
+    const next = format(addDays(parseISO(viewDate), 1), 'yyyy-MM-dd');
+    setViewDate(next);
+  };
+
   const handleSaveMorningPlan = () => {
+    if (!canEdit) return;
     dispatch({
       type: 'SAVE_MORNING_PLAN',
       payload: {
-        date: today,
+        date: viewDate,
         plan: {
           topPriorities: morningForm.priorities.filter((p) => p.trim()),
           intentions: morningForm.intention,
@@ -44,10 +63,11 @@ const DailyView: React.FC = () => {
   };
 
   const handleSaveEveningReview = () => {
+    if (!canEdit) return;
     dispatch({
       type: 'SAVE_EVENING_REVIEW',
       payload: {
-        date: today,
+        date: viewDate,
         review: {
           wins: eveningForm.wins.filter((w) => w.trim()),
           challenges: eveningForm.challenges.filter((c) => c.trim()),
@@ -63,10 +83,11 @@ const DailyView: React.FC = () => {
   };
 
   const handleToggleHabit = (habitId: string) => {
-    dispatch({ type: 'TOGGLE_HABIT', payload: { date: today, habitId } });
+    if (!canEdit) return;
+    dispatch({ type: 'TOGGLE_HABIT', payload: { date: viewDate, habitId } });
   };
 
-  const habits = getAllHabits();
+  const habits = getAllHabits(viewDate);
   const habitsByPillar = habits.reduce(
     (acc, h) => {
       if (!acc[h.habit.pillarId]) acc[h.habit.pillarId] = [];
@@ -88,11 +109,29 @@ const DailyView: React.FC = () => {
     thought: <Lightbulb size={14} />,
   };
 
+  const displayDate = isToday ? 'Today' : isYesterday ? 'Yesterday' : format(parseISO(viewDate), 'EEE, MMM d');
+
   return (
     <div className="daily-view">
+      {/* ── Date Navigator ── */}
+      <div className="daily-date-nav">
+        <button className="daily-date-btn" onClick={goToPrev} aria-label="Previous day">
+          <ChevronLeft size={20} />
+        </button>
+        <div className="daily-date-center">
+          <span className="daily-date-label">{displayDate}</span>
+          {!canEdit && (
+            <span className="daily-date-readonly"><Lock size={10} /> Read-only</span>
+          )}
+        </div>
+        <button className="daily-date-btn" onClick={goToNext} disabled={viewDate >= today} aria-label="Next day">
+          <ChevronRight size={20} />
+        </button>
+      </div>
+
       {/* ── Morning Plan ── */}
       <section className="daily-section">
-        {todayLog.morningPlan ? (
+        {dayLog.morningPlan ? (
           <div className="morning-plan-display">
             <div className="section-header-icon">
               <div className="sh-icon ritual-morning"><Sun size={16} /></div>
@@ -102,26 +141,26 @@ const DailyView: React.FC = () => {
             <div className="morning-plan-content">
               <div className="priorities-list">
                 <ol>
-                  {todayLog.morningPlan.topPriorities.map((p, i) => <li key={i}>{p}</li>)}
+                  {dayLog.morningPlan.topPriorities.map((p, i) => <li key={i}>{p}</li>)}
                 </ol>
               </div>
-              {todayLog.morningPlan.intentions && (
+              {dayLog.morningPlan.intentions && (
                 <div className="intention-box">
-                  <p>{todayLog.morningPlan.intentions}</p>
+                  <p>{dayLog.morningPlan.intentions}</p>
                 </div>
               )}
               <div className="energy-circles">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div
                     key={i}
-                    className={`energy-circle ${i < todayLog.morningPlan!.energyLevel ? 'filled' : ''}`}
-                    style={i < todayLog.morningPlan!.energyLevel ? { backgroundColor: 'var(--warning)' } : {}}
+                    className={`energy-circle ${i < dayLog.morningPlan!.energyLevel ? 'filled' : ''}`}
+                    style={i < dayLog.morningPlan!.energyLevel ? { backgroundColor: 'var(--warning)' } : {}}
                   />
                 ))}
               </div>
             </div>
           </div>
-        ) : (
+        ) : canEdit ? (
           <div className="ritual-cta" onClick={() => setShowMorningModal(true)}>
             <div className="ritual-cta-icon ritual-morning"><Sun size={22} /></div>
             <div className="ritual-cta-text">
@@ -129,6 +168,13 @@ const DailyView: React.FC = () => {
               <span>Set priorities and intentions</span>
             </div>
             <ChevronRight />
+          </div>
+        ) : (
+          <div className="ritual-cta ritual-cta-empty">
+            <div className="ritual-cta-icon ritual-morning" style={{ opacity: 0.4 }}><Sun size={22} /></div>
+            <div className="ritual-cta-text">
+              <strong style={{ color: 'var(--text-tertiary)' }}>No morning plan</strong>
+            </div>
           </div>
         )}
       </section>
@@ -141,52 +187,56 @@ const DailyView: React.FC = () => {
           </div>
           <h2>Habits</h2>
           <span className="section-counter">
-            {Object.values(todayLog.habitCompletions || {}).filter(Boolean).length}/{habits.length}
+            {Object.values(dayLog.habitCompletions || {}).filter(Boolean).length}/{habits.length}
           </span>
         </div>
-        <div className="habit-pillar-groups">
-          {Object.entries(habitsByPillar).map(([pillarId, pillarHabits]) => {
-            const pillar = state.pillars.find((p) => p.id === pillarId);
-            if (!pillar) return null;
-            return (
-              <div key={pillarId} className="habit-pillar-group">
-                <div className="habit-group-label">
-                  <div className="habit-group-dot" style={{ background: pillar.color }} />
-                  {pillar.name}
-                </div>
-                {pillarHabits.map((h) => {
-                  const isCompleted = todayLog.habitCompletions?.[h.habit.id] || false;
-                  const streak = getHabitStreak(h.habit.id);
-                  return (
-                    <div
-                      key={h.habit.id}
-                      className={`habit-row ${isCompleted ? 'habit-row-done' : ''}`}
-                      onClick={() => handleToggleHabit(h.habit.id)}
-                    >
+        {habits.length === 0 ? (
+          <p className="daily-empty-text">No habits tracked for this date.</p>
+        ) : (
+          <div className="habit-pillar-groups">
+            {Object.entries(habitsByPillar).map(([pillarId, pillarHabits]) => {
+              const pillar = state.pillars.find((p) => p.id === pillarId);
+              if (!pillar) return null;
+              return (
+                <div key={pillarId} className="habit-pillar-group">
+                  <div className="habit-group-label">
+                    <div className="habit-group-dot" style={{ background: pillar.color }} />
+                    {pillar.name}
+                  </div>
+                  {pillarHabits.map((h) => {
+                    const isCompleted = dayLog.habitCompletions?.[h.habit.id] || false;
+                    const streak = isToday ? getHabitStreak(h.habit.id) : 0;
+                    return (
                       <div
-                        className={`habit-check ${isCompleted ? 'completed' : ''}`}
-                        style={isCompleted ? { backgroundColor: h.pillarColor, borderColor: 'transparent' } : {}}
+                        key={h.habit.id}
+                        className={`habit-row ${isCompleted ? 'habit-row-done' : ''} ${!canEdit ? 'habit-row-readonly' : ''}`}
+                        onClick={() => handleToggleHabit(h.habit.id)}
                       >
-                        {isCompleted && <Check size={14} color="white" strokeWidth={3} />}
+                        <div
+                          className={`habit-check ${isCompleted ? 'completed' : ''}`}
+                          style={isCompleted ? { backgroundColor: h.pillarColor, borderColor: 'transparent' } : {}}
+                        >
+                          {isCompleted && <Check size={14} color="white" strokeWidth={3} />}
+                        </div>
+                        <span className="habit-row-emoji">{h.habit.icon}</span>
+                        <span className={`habit-row-title ${isCompleted ? 'completed-text' : ''}`}>
+                          {h.habit.title}
+                        </span>
+                        {streak > 0 && (
+                          <span className="habit-streak"><Flame size={10} /> {streak}</span>
+                        )}
                       </div>
-                      <span className="habit-row-emoji">{h.habit.icon}</span>
-                      <span className={`habit-row-title ${isCompleted ? 'completed-text' : ''}`}>
-                        {h.habit.title}
-                      </span>
-                      {streak > 0 && (
-                        <span className="habit-streak"><Flame size={10} /> {streak}</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* ── Quick Logs ── */}
-      {todayLog.quickLogs && todayLog.quickLogs.length > 0 && (
+      {dayLog.quickLogs && dayLog.quickLogs.length > 0 && (
         <section className="daily-section">
           <div className="section-header-icon">
             <div className="sh-icon" style={{ background: 'var(--warning-bg)', color: 'var(--warning)' }}>
@@ -195,7 +245,7 @@ const DailyView: React.FC = () => {
             <h2>Logs</h2>
           </div>
           <div className="log-list">
-            {todayLog.quickLogs.map((log) => {
+            {dayLog.quickLogs.map((log) => {
               const lp = state.pillars.find((p) => p.id === log.pillarId);
               return (
                 <div key={log.id} className="log-card">
@@ -217,7 +267,7 @@ const DailyView: React.FC = () => {
 
       {/* ── Evening Review ── */}
       <section className="daily-section">
-        {todayLog.eveningReview ? (
+        {dayLog.eveningReview ? (
           <div className="evening-review-display">
             <div className="section-header-icon">
               <div className="sh-icon ritual-evening"><MoonIcon size={16} /></div>
@@ -225,38 +275,38 @@ const DailyView: React.FC = () => {
               <div className="ritual-check"><Check size={12} strokeWidth={3} /></div>
             </div>
             <div className="evening-review-content">
-              {todayLog.eveningReview.wins.length > 0 && (
+              {dayLog.eveningReview.wins.length > 0 && (
                 <div className="review-block">
                   <h3>Wins</h3>
-                  <ul>{todayLog.eveningReview.wins.map((w, i) => <li key={i}>{w}</li>)}</ul>
+                  <ul>{dayLog.eveningReview.wins.map((w, i) => <li key={i}>{w}</li>)}</ul>
                 </div>
               )}
-              {todayLog.eveningReview.challenges.length > 0 && (
+              {dayLog.eveningReview.challenges.length > 0 && (
                 <div className="review-block">
                   <h3>Challenges</h3>
-                  <ul>{todayLog.eveningReview.challenges.map((c, i) => <li key={i}>{c}</li>)}</ul>
+                  <ul>{dayLog.eveningReview.challenges.map((c, i) => <li key={i}>{c}</li>)}</ul>
                 </div>
               )}
-              {todayLog.eveningReview.gratitude && (
+              {dayLog.eveningReview.gratitude && (
                 <div className="review-block">
                   <h3>Gratitude</h3>
-                  <p>{todayLog.eveningReview.gratitude}</p>
+                  <p>{dayLog.eveningReview.gratitude}</p>
                 </div>
               )}
-              {todayLog.eveningReview.tomorrowFocus && (
+              {dayLog.eveningReview.tomorrowFocus && (
                 <div className="review-block">
                   <h3>Tomorrow</h3>
-                  <p>{todayLog.eveningReview.tomorrowFocus}</p>
+                  <p>{dayLog.eveningReview.tomorrowFocus}</p>
                 </div>
               )}
               <div className="review-rating">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <span key={i} className={`rating-dot ${i < todayLog.eveningReview!.overallRating ? 'active' : ''}`} />
+                  <span key={i} className={`rating-dot ${i < dayLog.eveningReview!.overallRating ? 'active' : ''}`} />
                 ))}
               </div>
             </div>
           </div>
-        ) : (
+        ) : canEdit ? (
           <div className="ritual-cta" onClick={() => setShowEveningModal(true)}>
             <div className="ritual-cta-icon ritual-evening"><MoonIcon size={22} /></div>
             <div className="ritual-cta-text">
@@ -264,6 +314,13 @@ const DailyView: React.FC = () => {
               <span>Review wins, challenges & gratitude</span>
             </div>
             <ChevronRight />
+          </div>
+        ) : (
+          <div className="ritual-cta ritual-cta-empty">
+            <div className="ritual-cta-icon ritual-evening" style={{ opacity: 0.4 }}><MoonIcon size={22} /></div>
+            <div className="ritual-cta-text">
+              <strong style={{ color: 'var(--text-tertiary)' }}>No evening review</strong>
+            </div>
           </div>
         )}
       </section>

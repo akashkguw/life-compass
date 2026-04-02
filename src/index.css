@@ -204,6 +204,107 @@ a{color:inherit;text-decoration:none}
 .habit-tile-name-done{color:var(--text-tertiary);text-decoration:line-through;text-decoration-color:var(--border-medium)}
 .habit-tile-streak{display:inline-flex;align-items:center;gap:2px;font-size:.52rem;font-weight:700;color:var(--warning);background:var(--warning-bg);padding:1px 5px;border-radius:var(--radius-full)}
 .habit-tile-flash{position:absolute;inset:0;opacity:0;pointer-events:none;animation:tileFlash .4s ease-out}
+.habit-tile-priority-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* ── Habits header with add button ── */
+.habits-header-right{display:flex;align-items:center;gap:8px}
+.habits-add-btn{
+  width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border-light);
+  background:var(--bg-secondary);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:all .2s ease
+}
+.habits-add-btn:active{transform:scale(.9);background:var(--accent-bg)}
+
+/* ── Pillar Habit Widget ── */
+.pillar-habit-widget{
+  background:var(--bg-secondary);border:1px solid var(--border-light);
+  border-radius:var(--radius-xl);padding:12px;
+  box-shadow:0 1px 3px rgba(0,0,0,.04);
+  margin-bottom:2px
+}
+.phw-header{
+  display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:0 2px
+}
+.phw-icon{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.phw-name{font-size:.72rem;font-weight:700;color:var(--text-primary);flex:1;letter-spacing:-.01em}
+.phw-count{font-size:.6rem;font-weight:700;color:var(--text-tertiary)}
+.phw-habits{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+
+/* ── Ritual CTA Cards on Dashboard ── */
+.ritual-cta-card{
+  position:relative;overflow:hidden;
+  background:var(--bg-secondary);
+  border:1px solid var(--border-light);
+  border-radius:var(--radius-xl);
+  cursor:pointer;transition:all .2s ease;
+  box-shadow:0 1px 3px rgba(0,0,0,.04)
+}
+.ritual-cta-card:active{transform:scale(.98)}
+.ritual-cta-glow{
+  position:absolute;top:-50%;left:50%;transform:translateX(-50%);
+  width:200%;height:100%;border-radius:50%;filter:blur(40px);opacity:.08;pointer-events:none
+}
+.ritual-morning-glow{background:linear-gradient(135deg,#f59e0b,#ef4444)}
+.ritual-evening-glow{background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+.ritual-cta-inner{
+  position:relative;z-index:1;
+  display:flex;align-items:center;gap:14px;padding:16px
+}
+.ritual-cta-icon-wrap{
+  width:40px;height:40px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;color:white;flex-shrink:0
+}
+.ritual-cta-icon-wrap.ritual-morning{background:linear-gradient(135deg,#f59e0b,#f97316)}
+.ritual-cta-icon-wrap.ritual-evening{background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+
+/* Shared ritual classes (used in DailyView section headers & CTA icons) */
+.ritual-morning{background:linear-gradient(135deg,#f59e0b,#f97316);color:white}
+.ritual-evening{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white}
+.ritual-check{
+  width:20px;height:20px;border-radius:50%;
+  background:var(--success);color:white;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0
+}
+.section-counter{font-size:.72rem;font-weight:700;color:var(--text-tertiary)}
+.ritual-cta-text strong{display:block;font-size:.88rem;font-weight:700;color:var(--text-primary)}
+.ritual-cta-text span{display:block;font-size:.72rem;color:var(--text-tertiary);margin-top:2px}
+.ritual-cta-arrow{color:var(--text-tertiary);flex-shrink:0}
+
+/* ── Add Habit Modal extras ── */
+.add-habit-pillars{display:flex;flex-wrap:wrap;gap:6px}
+.add-habit-pillar-btn{
+  padding:6px 14px;border-radius:99px;font-size:.75rem;font-weight:600;
+  border:1.5px solid var(--border-light);background:var(--bg-secondary);
+  color:var(--text-secondary);cursor:pointer;transition:all .2s ease
+}
+.add-habit-pillar-active{font-weight:700}
+.add-habit-emojis{display:flex;flex-wrap:wrap;gap:4px}
+.add-habit-emoji{
+  width:36px;height:36px;border-radius:10px;border:1.5px solid var(--border-light);
+  background:var(--bg-secondary);font-size:1.1rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .15s ease
+}
+.add-habit-emoji-active{border-color:var(--accent);background:var(--accent-bg);box-shadow:0 0 0 2px rgba(99,102,241,.1)}
+.add-habit-freq{display:flex;gap:6px}
+.add-habit-freq-btn{
+  flex:1;padding:10px;border-radius:12px;border:1.5px solid var(--border-light);
+  background:var(--bg-secondary);color:var(--text-secondary);font-size:.82rem;font-weight:600;
+  cursor:pointer;transition:all .2s ease;text-align:center
+}
+.add-habit-freq-active{border-color:var(--accent);background:var(--accent-bg);color:var(--accent)}
+
+/* ── Priority selector in bottom sheet ── */
+.ht-sheet-priority{display:flex;flex-direction:column;gap:6px}
+.ht-sheet-priority-label{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-tertiary)}
+.ht-priority-btns{display:flex;gap:6px}
+.ht-priority-btn{
+  flex:1;padding:8px 4px;border-radius:10px;border:1.5px solid var(--border-light);
+  background:var(--bg-secondary);color:var(--text-secondary);font-size:.7rem;font-weight:600;
+  cursor:pointer;transition:all .2s ease;text-align:center
+}
+.ht-priority-btn:active{transform:scale(.95)}
+.ht-priority-active{font-weight:700}
 
 /* ── Long-press Bottom Sheet ── */
 @keyframes htSheetIn{from{transform:translateY(100%)}to{transform:translateY(0)}}
@@ -598,8 +699,34 @@ a{color:inherit;text-decoration:none}
 /* ================================================
    DAILY VIEW
    ================================================ */
-.daily-view{display:flex;flex-direction:column;gap:16px}
+.daily-view{display:flex;flex-direction:column;gap:16px;padding-bottom:16px}
 .daily-section{background:var(--bg-secondary);border-radius:var(--radius-xl);border:1px solid var(--border-light);padding:16px;box-shadow:var(--shadow-sm)}
+
+/* Date Navigator */
+.daily-date-nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 4px;gap:8px
+}
+.daily-date-btn{
+  width:36px;height:36px;border-radius:50%;border:1px solid var(--border-light);
+  background:var(--bg-secondary);color:var(--text-secondary);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:all .2s ease
+}
+.daily-date-btn:disabled{opacity:.3;cursor:not-allowed}
+.daily-date-btn:active:not(:disabled){transform:scale(.9);background:var(--bg-tertiary)}
+.daily-date-center{display:flex;flex-direction:column;align-items:center;gap:2px}
+.daily-date-label{font-size:.95rem;font-weight:700;color:var(--text-primary)}
+.daily-date-readonly{
+  display:inline-flex;align-items:center;gap:3px;
+  font-size:.6rem;font-weight:600;color:var(--text-tertiary);
+  background:var(--bg-tertiary);padding:2px 8px;border-radius:99px
+}
+.daily-empty-text{font-size:.82rem;color:var(--text-tertiary);text-align:center;padding:12px 0}
+.habit-row-readonly{opacity:.65;cursor:default}
+.habit-row-readonly:active{transform:none;background:transparent}
+.ritual-cta-empty{cursor:default;opacity:.7}
+.ritual-cta-empty:active{opacity:.7}
 
 /* Section Header with Icon */
 .section-header-icon{display:flex;align-items:center;gap:10px;margin-bottom:14px}

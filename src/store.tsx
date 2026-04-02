@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback, useRef, useMemo } from 'react';
-import { AppState, DayLog, MorningPlan, QuickLog, EveningReview, WeeklyPlan, PillarId, Pillar } from './types';
+import { AppState, DayLog, MorningPlan, QuickLog, EveningReview, WeeklyPlan, PillarId, Pillar, Habit, HabitPriority } from './types';
 import { defaultPillars } from './data/pillars';
 import { format } from 'date-fns';
 
@@ -9,16 +9,26 @@ function getToday(): string {
   return format(new Date(), 'yyyy-MM-dd');
 }
 
+function migrateHabits(pillars: Pillar[]): Pillar[] {
+  return pillars.map(p => ({
+    ...p,
+    habits: p.habits.map(h => ({
+      ...h,
+      priority: h.priority || 'medium',
+      createdDate: h.createdDate || '2000-01-01',
+    })),
+  }));
+}
+
 function loadState(): AppState {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      // Merge with defaults in case new pillars/habits were added
       return {
         ...getDefaultState(),
         ...parsed,
-        pillars: parsed.pillars || defaultPillars,
+        pillars: migrateHabits(parsed.pillars || defaultPillars),
       };
     }
   } catch (e) {
@@ -60,6 +70,8 @@ type Action =
   | { type: 'SET_USER_NAME'; payload: string }
   | { type: 'COMPLETE_ONBOARDING'; payload?: Pillar[] }
   | { type: 'REMOVE_HABIT'; payload: { habitId: string } }
+  | { type: 'ADD_HABIT'; payload: { pillarId: string; title: string; icon: string; frequency: 'daily' | 'weekly' } }
+  | { type: 'SET_HABIT_PRIORITY'; payload: { habitId: string; priority: HabitPriority } }
   | { type: 'RESET_STATE' };
 
 function reducer(state: AppState, action: Action): AppState {
@@ -159,11 +171,46 @@ function reducer(state: AppState, action: Action): AppState {
 
     case 'REMOVE_HABIT': {
       const { habitId } = action.payload;
+      // Soft-delete: set removedDate so habit stays visible for past days
       return {
         ...state,
         pillars: state.pillars.map(p => ({
           ...p,
-          habits: p.habits.filter(h => h.id !== habitId),
+          habits: p.habits.map(h =>
+            h.id === habitId ? { ...h, removedDate: getToday() } : h
+          ),
+        })),
+      };
+    }
+
+    case 'ADD_HABIT': {
+      const { pillarId, title, icon, frequency } = action.payload;
+      const newHabit: Habit = {
+        id: `habit-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        pillarId,
+        title,
+        icon,
+        frequency,
+        priority: 'medium',
+        createdDate: getToday(),
+      };
+      return {
+        ...state,
+        pillars: state.pillars.map(p =>
+          p.id === pillarId ? { ...p, habits: [...p.habits, newHabit] } : p
+        ),
+      };
+    }
+
+    case 'SET_HABIT_PRIORITY': {
+      const { habitId, priority } = action.payload;
+      return {
+        ...state,
+        pillars: state.pillars.map(p => ({
+          ...p,
+          habits: p.habits.map(h =>
+            h.id === habitId ? { ...h, priority } : h
+          ),
         })),
       };
     }
@@ -176,31 +223,12 @@ function reducer(state: AppState, action: Action): AppState {
       const finalPillars = action.payload && action.payload.length > 0
         ? action.payload
         : state.pillars;
-      // Seed mock data so the dashboard looks alive
+      // Start completely fresh — no seeded data, no fake streaks
       const t = getToday();
-      const d = new Date();
-      const dailyHabits = finalPillars.flatMap(p => p.habits.filter(h => h.frequency === 'daily'));
-      // Today starts fresh — no habits pre-checked
-      // Build 5 days of history for streaks
-      const seededLogs: Record<string, DayLog> = {};
-      for (let i = 1; i <= 5; i++) {
-        const pd = new Date(d);
-        pd.setDate(pd.getDate() - i);
-        const ds = format(pd, 'yyyy-MM-dd');
-        const hc: Record<string, boolean> = {};
-        dailyHabits.forEach((h, j) => { if ((j + i) % 4 !== 0) hc[h.id] = true; });
-        seededLogs[ds] = { date: ds, morningPlan: null, quickLogs: [], eveningReview: null, habitCompletions: hc };
-      }
-      // Today starts empty — user fills it in themselves
-      seededLogs[t] = {
-        date: t,
-        morningPlan: null,
-        quickLogs: [],
-        eveningReview: null,
-        habitCompletions: {},
+      const freshLogs: Record<string, DayLog> = {
+        [t]: { date: t, morningPlan: null, quickLogs: [], eveningReview: null, habitCompletions: {} },
       };
-      // All milestones start fresh — nothing pre-completed
-      return { ...state, onboarded: true, pillars: finalPillars, dayLogs: { ...state.dayLogs, ...seededLogs } };
+      return { ...state, onboarded: true, pillars: finalPillars, dayLogs: { ...state.dayLogs, ...freshLogs } };
     }
 
     case 'RESET_STATE':
@@ -226,10 +254,11 @@ interface StoreContextType {
   dispatch: React.Dispatch<Action>;
   today: string;
   todayLog: DayLog;
-  getAllHabits: () => { habit: { id: string; title: string; frequency: string; icon?: string; pillarId: PillarId }; pillarName: string; pillarColor: string }[];
+  getAllHabits: (forDate?: string) => { habit: Habit; pillarName: string; pillarColor: string }[];
   getHabitStreak: (habitId: string) => number;
   getHabitHistory: (habitId: string) => HabitHistory;
   getDayCompletionRate: (date: string) => number;
+  getDayLog: (date: string) => DayLog;
 }
 
 const StoreContext = createContext<StoreContextType | null>(null);
@@ -253,15 +282,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return () => { if (saveTimeout.current) clearTimeout(saveTimeout.current); };
   }, [state]);
 
-  const getAllHabits = useCallback(() => {
+  const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
+
+  const getAllHabits = useCallback((forDate?: string) => {
+    const d = forDate || today;
     return state.pillars.flatMap(p =>
-      p.habits.map(h => ({
-        habit: h,
-        pillarName: p.name,
-        pillarColor: p.color,
-      }))
-    );
-  }, [state.pillars]);
+      p.habits
+        .filter(h => {
+          // Only show habits that existed on the given date
+          const created = h.createdDate || '2000-01-01';
+          if (d < created) return false;
+          // If removed, only show for dates before removal
+          if (h.removedDate && d >= h.removedDate) return false;
+          return true;
+        })
+        .map(h => ({
+          habit: h,
+          pillarName: p.name,
+          pillarColor: p.color,
+        }))
+    ).sort((a, b) => (PRIORITY_ORDER[a.habit.priority || 'medium'] ?? 1) - (PRIORITY_ORDER[b.habit.priority || 'medium'] ?? 1));
+  }, [state.pillars, today]);
 
   const MAX_STREAK_LOOKBACK = 60;
   const getHabitStreak = useCallback((habitId: string) => {
@@ -280,10 +321,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return streak;
   }, [state.dayLogs]);
 
-  const dailyHabits = useMemo(
-    () => state.pillars.flatMap(p => p.habits.filter(h => h.frequency === 'daily')),
-    [state.pillars]
-  );
+  const dailyHabitsForDate = useCallback((date: string) => {
+    return state.pillars.flatMap(p =>
+      p.habits.filter(h => {
+        if (h.frequency !== 'daily') return false;
+        const created = h.createdDate || '2000-01-01';
+        if (date < created) return false;
+        if (h.removedDate && date >= h.removedDate) return false;
+        return true;
+      })
+    );
+  }, [state.pillars]);
 
   const getHabitHistory = useCallback((habitId: string): HabitHistory => {
     let completedDays = 0;
@@ -326,13 +374,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const getDayCompletionRate = useCallback((date: string) => {
     const log = state.dayLogs[date];
-    if (!log || dailyHabits.length === 0) return 0;
-    const completed = dailyHabits.filter(h => log.habitCompletions[h.id]).length;
-    return Math.round((completed / dailyHabits.length) * 100);
-  }, [state.dayLogs, dailyHabits]);
+    const habits = dailyHabitsForDate(date);
+    if (!log || habits.length === 0) return 0;
+    const completed = habits.filter(h => log.habitCompletions[h.id]).length;
+    return Math.round((completed / habits.length) * 100);
+  }, [state.dayLogs, dailyHabitsForDate]);
+
+  const getDayLog = useCallback((date: string) => ensureDayLog(state, date), [state]);
 
   return (
-    <StoreContext.Provider value={{ state, dispatch, today, todayLog, getAllHabits, getHabitStreak, getHabitHistory, getDayCompletionRate }}>
+    <StoreContext.Provider value={{ state, dispatch, today, todayLog, getAllHabits, getHabitStreak, getHabitHistory, getDayCompletionRate, getDayLog }}>
       {children}
     </StoreContext.Provider>
   );

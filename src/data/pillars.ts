@@ -1,4 +1,7 @@
-import { Pillar } from '../types';
+import { Pillar, Habit } from '../types';
+
+type HabitInput = Omit<Habit, 'priority' | 'createdDate'>;
+const h = (input: HabitInput): Habit => ({ ...input, priority: 'medium', createdDate: '2000-01-01' });
 
 export const defaultPillars: Pillar[] = [
   {
@@ -53,10 +56,10 @@ export const defaultPillars: Pillar[] = [
       },
     ],
     habits: [
-      { id: 'ch-1', pillarId: 'career', title: 'Review or write a design document', frequency: 'weekly', icon: '📄' },
-      { id: 'ch-2', pillarId: 'career', title: 'Skip-level or cross-team 1:1', frequency: 'weekly', icon: '🤝' },
-      { id: 'ch-3', pillarId: 'career', title: 'Update promo document', frequency: 'weekly', icon: '📝' },
-      { id: 'ch-4', pillarId: 'career', title: 'Read a technical paper or blog', frequency: 'daily', icon: '📚' },
+      h({ id: 'ch-1', pillarId: 'career', title: 'Review or write a design document', frequency: 'weekly', icon: '📄' }),
+      h({ id: 'ch-2', pillarId: 'career', title: 'Skip-level or cross-team 1:1', frequency: 'weekly', icon: '🤝' }),
+      h({ id: 'ch-3', pillarId: 'career', title: 'Update promo document', frequency: 'weekly', icon: '📝' }),
+      h({ id: 'ch-4', pillarId: 'career', title: 'Read a technical paper or blog', frequency: 'daily', icon: '📚' }),
     ],
   },
   {
@@ -95,9 +98,9 @@ export const defaultPillars: Pillar[] = [
       },
     ],
     habits: [
-      { id: 'eh-1', pillarId: 'education', title: 'Study for 1+ hour', frequency: 'daily', icon: '📖' },
-      { id: 'eh-2', pillarId: 'education', title: 'Review lecture notes within 24 hours', frequency: 'daily', icon: '🔍' },
-      { id: 'eh-3', pillarId: 'education', title: 'Work on assignments (submit 2 days early)', frequency: 'weekly', icon: '✏️' },
+      h({ id: 'eh-1', pillarId: 'education', title: 'Study for 1+ hour', frequency: 'daily', icon: '📖' }),
+      h({ id: 'eh-2', pillarId: 'education', title: 'Review lecture notes within 24 hours', frequency: 'daily', icon: '🔍' }),
+      h({ id: 'eh-3', pillarId: 'education', title: 'Work on assignments (submit 2 days early)', frequency: 'weekly', icon: '✏️' }),
     ],
   },
   {
@@ -136,10 +139,10 @@ export const defaultPillars: Pillar[] = [
       },
     ],
     habits: [
-      { id: 'fh-1', pillarId: 'family', title: '30 min dedicated baby time', frequency: 'daily', icon: '👶' },
-      { id: 'fh-2', pillarId: 'family', title: 'Capture a photo or moment', frequency: 'daily', icon: '📸' },
-      { id: 'fh-3', pillarId: 'family', title: 'Family activity or outing', frequency: 'weekly', icon: '🏡' },
-      { id: 'fh-4', pillarId: 'family', title: 'Quality time with partner', frequency: 'daily', icon: '❤️' },
+      h({ id: 'fh-1', pillarId: 'family', title: '30 min dedicated baby time', frequency: 'daily', icon: '👶' }),
+      h({ id: 'fh-2', pillarId: 'family', title: 'Capture a photo or moment', frequency: 'daily', icon: '📸' }),
+      h({ id: 'fh-3', pillarId: 'family', title: 'Family activity or outing', frequency: 'weekly', icon: '🏡' }),
+      h({ id: 'fh-4', pillarId: 'family', title: 'Quality time with partner', frequency: 'daily', icon: '❤️' }),
     ],
   },
   {
@@ -178,9 +181,9 @@ export const defaultPillars: Pillar[] = [
       },
     ],
     habits: [
-      { id: 'hh-1', pillarId: 'home', title: '15-minute daily tidy', frequency: 'daily', icon: '🧹' },
-      { id: 'hh-2', pillarId: 'home', title: 'Meal prep or plan meals', frequency: 'weekly', icon: '🍳' },
-      { id: 'hh-3', pillarId: 'home', title: 'Review budget and expenses', frequency: 'weekly', icon: '💰' },
+      h({ id: 'hh-1', pillarId: 'home', title: '15-minute daily tidy', frequency: 'daily', icon: '🧹' }),
+      h({ id: 'hh-2', pillarId: 'home', title: 'Meal prep or plan meals', frequency: 'weekly', icon: '🍳' }),
+      h({ id: 'hh-3', pillarId: 'home', title: 'Review budget and expenses', frequency: 'weekly', icon: '💰' }),
     ],
   },
   {
@@ -230,11 +233,11 @@ export const defaultPillars: Pillar[] = [
       },
     ],
     habits: [
-      { id: 'hlh-1', pillarId: 'health', title: 'Exercise 30+ minutes', frequency: 'daily', icon: '💪' },
-      { id: 'hlh-2', pillarId: 'health', title: 'Drink 8 glasses of water', frequency: 'daily', icon: '💧' },
-      { id: 'hlh-3', pillarId: 'health', title: '10 minutes mindfulness', frequency: 'daily', icon: '🧘' },
-      { id: 'hlh-4', pillarId: 'health', title: 'Track sleep hours', frequency: 'daily', icon: '😴' },
-      { id: 'hlh-5', pillarId: 'health', title: 'Eat a balanced meal', frequency: 'daily', icon: '🥗' },
+      h({ id: 'hlh-1', pillarId: 'health', title: 'Exercise 30+ minutes', frequency: 'daily', icon: '💪' }),
+      h({ id: 'hlh-2', pillarId: 'health', title: 'Drink 8 glasses of water', frequency: 'daily', icon: '💧' }),
+      h({ id: 'hlh-3', pillarId: 'health', title: '10 minutes mindfulness', frequency: 'daily', icon: '🧘' }),
+      h({ id: 'hlh-4', pillarId: 'health', title: 'Track sleep hours', frequency: 'daily', icon: '😴' }),
+      h({ id: 'hlh-5', pillarId: 'health', title: 'Eat a balanced meal', frequency: 'daily', icon: '🥗' }),
     ],
   },
 ];
