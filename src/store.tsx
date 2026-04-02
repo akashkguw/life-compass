@@ -4,6 +4,7 @@ import { defaultPillars } from './data/pillars';
 import { format } from 'date-fns';
 
 const STORAGE_KEY = 'life-compass-data';
+const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
 
 function getToday(): string {
   return format(new Date(), 'yyyy-MM-dd');
@@ -41,7 +42,7 @@ function getDefaultState(): AppState {
   return {
     userName: '',
     onboarded: false,
-    pillars: defaultPillars,
+    pillars: migrateHabits(defaultPillars),
     dayLogs: {},
     weeklyPlans: {},
     theme: 'auto',
@@ -167,7 +168,7 @@ function reducer(state: AppState, action: Action): AppState {
       };
 
     case 'UPDATE_PILLARS':
-      return { ...state, pillars: action.payload };
+      return { ...state, pillars: migrateHabits(action.payload) };
 
     case 'REMOVE_HABIT': {
       const { habitId } = action.payload;
@@ -220,9 +221,11 @@ function reducer(state: AppState, action: Action): AppState {
 
     case 'COMPLETE_ONBOARDING': {
       // Use custom pillars from onboarding if provided, otherwise keep current
-      const finalPillars = action.payload && action.payload.length > 0
+      const rawPillars = action.payload && action.payload.length > 0
         ? action.payload
         : state.pillars;
+      // Ensure all habits have priority and createdDate fields
+      const finalPillars = migrateHabits(rawPillars);
       // Start completely fresh — no seeded data, no fake streaks
       const t = getToday();
       const freshLogs: Record<string, DayLog> = {
@@ -281,8 +284,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }, 300);
     return () => { if (saveTimeout.current) clearTimeout(saveTimeout.current); };
   }, [state]);
-
-  const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
 
   const getAllHabits = useCallback((forDate?: string) => {
     const d = forDate || today;
