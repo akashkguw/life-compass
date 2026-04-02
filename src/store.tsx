@@ -11,12 +11,16 @@ function getToday(): string {
 }
 
 function migrateHabits(pillars: Pillar[]): Pillar[] {
+  const today = getToday();
   return pillars.map(p => ({
     ...p,
     habits: p.habits.map(h => ({
       ...h,
       priority: h.priority || 'medium',
-      createdDate: h.createdDate || '2000-01-01',
+      createdDate: (() => {
+        const created = h.createdDate || '2000-01-01';
+        return created > today ? today : created;
+      })(),
     })),
   }));
 }

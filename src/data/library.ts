@@ -368,6 +368,13 @@ function createGoal(
   };
 }
 
+function getLocalDateISO(): string {
+  // Keep habit dates in local yyyy-MM-dd to match app-wide date comparisons.
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+}
+
 function createHabit(
   pillarId: string,
   title: string,
@@ -381,7 +388,7 @@ function createHabit(
     frequency,
     icon,
     priority: 'medium' as const,
-    createdDate: new Date().toISOString().slice(0, 10),
+    createdDate: getLocalDateISO(),
   };
 }
 
