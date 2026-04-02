@@ -2615,7 +2615,7 @@ export function generatePillars(config: OnboardingConfig): GeneratedPillar[] {
       for (const pillarId of config.customPillars) {
         if (pillarId === 'career') {
           pillars.push(generateCareerPillar(config.role, config.roleTarget));
-        } else if (pillarId === 'education' || pillarId === 'academics') {
+        } else if (pillarId === 'education') {
           pillars.push(generateEducationPillar(config.education));
         } else if (pillarId === 'family') {
           pillars.push(generateFamilyPillar(config.family));

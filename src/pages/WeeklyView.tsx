@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from 'date-fns';
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, parseISO } from 'date-fns';
 import { Calendar, TrendingUp, Target, Plus } from 'lucide-react';
 import { useStore } from '../store';
 import { PillarId } from '../types';
@@ -10,8 +10,9 @@ export default function WeeklyView() {
   const [formData, setFormData] = useState<Record<string, string>>({ topPriority: '' });
 
   // Calculate week boundaries
-  const weekStart = startOfWeek(new Date(today), { weekStartsOn: 1 });
-  const weekEnd = endOfWeek(weekStart);
+  const todayDate = parseISO(today);
+  const weekStart = startOfWeek(todayDate, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
   const weekStartStr = format(weekStart, 'yyyy-MM-dd');
   const daysOfWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
@@ -105,7 +106,7 @@ export default function WeeklyView() {
         {daysOfWeek.map((day) => {
           const dayStr = format(day, 'yyyy-MM-dd');
           const rate = getDayCompletionRate(dayStr);
-          const isToday = isSameDay(day, new Date(today));
+          const isToday = isSameDay(day, todayDate);
 
           let dotClass = 'dot-gray';
           if (rate > 70) dotClass = 'dot-green';

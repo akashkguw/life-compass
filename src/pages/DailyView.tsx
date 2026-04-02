@@ -88,6 +88,7 @@ const DailyView: React.FC = () => {
   };
 
   const habits = getAllHabits(viewDate);
+  const completedHabits = habits.filter(({ habit }) => dayLog.habitCompletions?.[habit.id]).length;
   const habitsByPillar = habits.reduce(
     (acc, h) => {
       if (!acc[h.habit.pillarId]) acc[h.habit.pillarId] = [];
@@ -187,7 +188,7 @@ const DailyView: React.FC = () => {
           </div>
           <h2>Habits</h2>
           <span className="section-counter">
-            {Object.values(dayLog.habitCompletions || {}).filter(Boolean).length}/{habits.length}
+            {completedHabits}/{habits.length}
           </span>
         </div>
         {habits.length === 0 ? (

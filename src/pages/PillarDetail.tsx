@@ -24,6 +24,12 @@ export default function PillarDetail() {
   }
 
   const pillarLogs = todayLog.quickLogs.filter(log => log.pillarId === id);
+  const activeHabits = pillar.habits.filter((habit) => {
+    const created = habit.createdDate || '2000-01-01';
+    if (today < created) return false;
+    if (habit.removedDate && today >= habit.removedDate) return false;
+    return true;
+  });
 
   return (
     <div className="page-container">
@@ -116,13 +122,13 @@ export default function PillarDetail() {
 
       {activeTab === 'habits' && (
         <div className="tab-content">
-          {pillar.habits.length === 0 ? (
+          {activeHabits.length === 0 ? (
             <div className="empty-state">
               <Repeat size={32} />
               <p className="empty-state-text">No habits yet for this pillar</p>
             </div>
           ) : (
-            pillar.habits.map(habit => {
+            activeHabits.map(habit => {
               const isCompleted = todayLog.habitCompletions[habit.id] || false;
               const streak = getHabitStreak(habit.id);
 

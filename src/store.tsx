@@ -235,7 +235,7 @@ function reducer(state: AppState, action: Action): AppState {
       const freshLogs: Record<string, DayLog> = {
         [t]: { date: t, morningPlan: null, quickLogs: [], eveningReview: null, habitCompletions: {} },
       };
-      return { ...state, onboarded: true, pillars: finalPillars, dayLogs: { ...state.dayLogs, ...freshLogs } };
+      return { ...state, onboarded: true, pillars: finalPillars, dayLogs: freshLogs };
     }
 
     case 'RESET_STATE':
@@ -326,10 +326,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return streak;
   }, [state.dayLogs]);
 
-  const dailyHabitsForDate = useCallback((date: string) => {
+  const activeHabitsForDate = useCallback((date: string) => {
     return state.pillars.flatMap(p =>
       p.habits.filter(h => {
-        if (h.frequency !== 'daily') return false;
         const created = h.createdDate || '2000-01-01';
         if (date < created) return false;
         if (h.removedDate && date >= h.removedDate) return false;
@@ -379,11 +378,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const getDayCompletionRate = useCallback((date: string) => {
     const log = state.dayLogs[date];
-    const habits = dailyHabitsForDate(date);
+    const habits = activeHabitsForDate(date);
     if (!log || habits.length === 0) return 0;
     const completed = habits.filter(h => log.habitCompletions[h.id]).length;
     return Math.round((completed / habits.length) * 100);
-  }, [state.dayLogs, dailyHabitsForDate]);
+  }, [state.dayLogs, activeHabitsForDate]);
 
   const getDayLog = useCallback((date: string) => ensureDayLog(state, date), [state]);
 
