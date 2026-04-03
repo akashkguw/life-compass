@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../store';
 import { PillarId, HabitPriority } from '../types';
+import OverlayPortal from '../components/OverlayPortal';
 
 const pillarIcons: Record<string, React.FC<any>> = {
   career: Rocket, education: GraduationCap, family: Heart, home: Home, health: Activity,
@@ -393,8 +394,9 @@ export default function Dashboard() {
 
       {/* ── LONG-PRESS BOTTOM SHEET ── */}
       {longPressInfo && sheetHistory && (
-        <div className="ht-sheet-overlay" onClick={() => { setLongPressInfo(null); setConfirmDelete(false); }}>
-          <div className="ht-sheet" onClick={(e) => e.stopPropagation()}>
+        <OverlayPortal>
+          <div className="ht-sheet-overlay" onClick={() => { setLongPressInfo(null); setConfirmDelete(false); }}>
+            <div className="ht-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="ht-sheet-head">
               <div className="ht-sheet-title-row">
                 <span className="ht-sheet-emoji">{sheetHabit?.icon || '✦'}</span>
@@ -465,14 +467,16 @@ export default function Dashboard() {
               <Trash2 size={14} />
               {confirmDelete ? 'Confirm delete' : 'Remove habit'}
             </button>
+            </div>
           </div>
-        </div>
+        </OverlayPortal>
       )}
 
       {/* ── ADD HABIT MODAL ── */}
       {showAddHabit && (
-        <div className="modal-overlay" onClick={() => setShowAddHabit(false)}>
-          <div className="modal-panel" onClick={e => e.stopPropagation()}>
+        <OverlayPortal>
+          <div className="modal-overlay" onClick={() => setShowAddHabit(false)}>
+            <div className="modal-panel" onClick={e => e.stopPropagation()}>
             <div className="modal-handle" />
             <button className="modal-close-btn" onClick={() => setShowAddHabit(false)} aria-label="Close"><X size={18} /></button>
             <div className="modal-title">Add Habit</div>
@@ -518,14 +522,16 @@ export default function Dashboard() {
                 Add Habit
               </button>
             </form>
+            </div>
           </div>
-        </div>
+        </OverlayPortal>
       )}
 
       {/* ── MORNING MODAL ── */}
       {showMorningModal && (
-        <div className="modal-overlay" onClick={() => setShowMorningModal(false)}>
-          <div className="modal-panel" onClick={e => e.stopPropagation()}>
+        <OverlayPortal>
+          <div className="modal-overlay" onClick={() => setShowMorningModal(false)}>
+            <div className="modal-panel" onClick={e => e.stopPropagation()}>
             <div className="modal-handle" />
             <button className="modal-close-btn" onClick={() => setShowMorningModal(false)} aria-label="Close"><X size={18} /></button>
             <div className="modal-title">Start Your Morning</div>
@@ -558,14 +564,16 @@ export default function Dashboard() {
                 Save Morning Plan
               </button>
             </form>
+            </div>
           </div>
-        </div>
+        </OverlayPortal>
       )}
 
       {/* ── EVENING MODAL ── */}
       {showEveningModal && (
-        <div className="modal-overlay" onClick={() => setShowEveningModal(false)}>
-          <div className="modal-panel" onClick={e => e.stopPropagation()}>
+        <OverlayPortal>
+          <div className="modal-overlay" onClick={() => setShowEveningModal(false)}>
+            <div className="modal-panel" onClick={e => e.stopPropagation()}>
             <div className="modal-handle" />
             <button className="modal-close-btn" onClick={() => setShowEveningModal(false)} aria-label="Close"><X size={18} /></button>
             <div className="modal-title">Wind Down & Reflect</div>
@@ -620,8 +628,9 @@ export default function Dashboard() {
                 Save Evening Review
               </button>
             </form>
+            </div>
           </div>
-        </div>
+        </OverlayPortal>
       )}
     </div>
   );

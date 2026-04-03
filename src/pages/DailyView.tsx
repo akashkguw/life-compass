@@ -6,6 +6,7 @@ import {
   ChevronLeft, Lock,
 } from 'lucide-react';
 import { useStore } from '../store';
+import OverlayPortal from '../components/OverlayPortal';
 
 const DailyView: React.FC = () => {
   const { state, dispatch, today, getAllHabits, getHabitStreak, getDayLog } = useStore();
@@ -328,8 +329,9 @@ const DailyView: React.FC = () => {
 
       {/* ── Morning Modal ── */}
       {showMorningModal && (
-        <div className="modal-overlay" onClick={() => setShowMorningModal(false)} role="presentation">
-          <div className="modal-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Morning Plan">
+        <OverlayPortal>
+          <div className="modal-overlay" onClick={() => setShowMorningModal(false)} role="presentation">
+            <div className="modal-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Morning Plan">
             <div className="modal-handle" />
             <button className="modal-close-btn" onClick={() => setShowMorningModal(false)} aria-label="Close">
               <X size={18} />
@@ -368,14 +370,16 @@ const DailyView: React.FC = () => {
                 Save Morning Plan
               </button>
             </form>
+            </div>
           </div>
-        </div>
+        </OverlayPortal>
       )}
 
       {/* ── Evening Modal ── */}
       {showEveningModal && (
-        <div className="modal-overlay" onClick={() => setShowEveningModal(false)} role="presentation">
-          <div className="modal-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Evening Review">
+        <OverlayPortal>
+          <div className="modal-overlay" onClick={() => setShowEveningModal(false)} role="presentation">
+            <div className="modal-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Evening Review">
             <div className="modal-handle" />
             <button className="modal-close-btn" onClick={() => setShowEveningModal(false)} aria-label="Close">
               <X size={18} />
@@ -447,8 +451,9 @@ const DailyView: React.FC = () => {
                 Save Evening Review
               </button>
             </form>
+            </div>
           </div>
-        </div>
+        </OverlayPortal>
       )}
     </div>
   );

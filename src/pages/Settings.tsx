@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sun, Moon, Monitor, Download, Trash2, ArrowLeft, Info } from 'lucide-react';
 import { useStore } from '../store';
+import OverlayPortal from '../components/OverlayPortal';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -146,8 +147,9 @@ export default function SettingsPage() {
 
       {/* Reset Confirmation Modal */}
       {showResetConfirm && (
-        <div className="modal-overlay" style={{ alignItems: 'center' }}>
-          <div className="modal-panel" style={{ margin: 0 }}>
+        <OverlayPortal>
+          <div className="modal-overlay" style={{ alignItems: 'center' }}>
+            <div className="modal-panel" style={{ margin: 0 }}>
             <div className="reset-confirm-icon">
               <Trash2 size={32} />
             </div>
@@ -170,8 +172,9 @@ export default function SettingsPage() {
                 Reset Everything
               </button>
             </div>
+            </div>
           </div>
-        </div>
+        </OverlayPortal>
       )}
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Trophy, TrendingUp, AlertCircle, Lightbulb } from 'lucide-react';
 import { useStore } from '../store';
 import { QuickLog, PillarId } from '../types';
+import OverlayPortal from './OverlayPortal';
 
 interface QuickLogModalProps {
   isOpen: boolean;
@@ -42,8 +43,9 @@ export default function QuickLogModal({ isOpen, onClose }: QuickLogModalProps) {
   ];
 
   return (
-    <div className="modal-overlay" onClick={onClose} role="presentation">
-      <div className="modal-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Quick Log">
+    <OverlayPortal>
+      <div className="modal-overlay" onClick={onClose} role="presentation">
+        <div className="modal-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Quick Log">
         <div className="modal-handle" />
         <h2 className="modal-title">Quick Log</h2>
         <p className="modal-subtitle">Capture a moment from your day</p>
@@ -100,7 +102,8 @@ export default function QuickLogModal({ isOpen, onClose }: QuickLogModalProps) {
         >
           Save Log
         </button>
+        </div>
       </div>
-    </div>
+    </OverlayPortal>
   );
 }

@@ -3,6 +3,7 @@ import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, parseISO 
 import { Calendar, TrendingUp, Target, Plus } from 'lucide-react';
 import { useStore } from '../store';
 import { PillarId } from '../types';
+import OverlayPortal from '../components/OverlayPortal';
 
 export default function WeeklyView() {
   const { state, dispatch, today, getDayCompletionRate } = useStore();
@@ -185,8 +186,9 @@ export default function WeeklyView() {
 
       {/* Weekly Plan Modal */}
       {showPlanModal && (
-        <div className="modal-overlay" onClick={() => setShowPlanModal(false)} role="presentation">
-          <div className="modal-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Weekly Plan">
+        <OverlayPortal>
+          <div className="modal-overlay" onClick={() => setShowPlanModal(false)} role="presentation">
+            <div className="modal-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Weekly Plan">
             <div className="modal-handle"></div>
             <h2 className="modal-title">Plan Your Week</h2>
 
@@ -224,8 +226,9 @@ export default function WeeklyView() {
                 Save Plan
               </button>
             </div>
+            </div>
           </div>
-        </div>
+        </OverlayPortal>
       )}
     </div>
   );
